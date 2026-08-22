@@ -16,6 +16,10 @@ Use this skill for the narrated body of the educational video workflow.
 - In dry-run mode, emit the narration payload and estimated timings.
 - In test or live mode, run through `scripts/with-env.sh` and let the tool call
   `scripts/check-env.sh fal` before the first request.
+- Set `WORKFLOW_MODE=live` as well as `--mode live`; the preflight does not see
+  the flag on its own.
+- Pass `--poll-interval-seconds 0.5`. The default of 2 dominates runtime.
+- TTS is the critical path; images finish well before the voiceover does.
 - If the provider does not return slide timings, estimate from slide durations
   and mark the timing artifact as estimated.
 
@@ -27,3 +31,6 @@ Use this skill for the narrated body of the educational video workflow.
 Read `references/voiceover-contract.md` when wiring a TTS, avatar, or video narration provider.
 Read `../educational-video-workflow/references/fal-media-contract.md` before
 changing fal model ids, payload fields, or artifact paths.
+
+Read `../educational-video-workflow/references/fal-run-playbook.md` before
+running a live generation or delegating one to a subagent.
