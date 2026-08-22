@@ -1,0 +1,18 @@
+{
+  "results": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Dot-com_bubble",
+      "raw_content": "# Dot-com bubble\n\nThe NASDAQ Composite index peaked at 5,048.62 on 10 March 2000. Between 1995 and its peak in March 2000, the NASDAQ Composite rose by 600%. At its trough on 9 October 2002 the NASDAQ-100 had fallen to 1,114, down 78% from its peak. By the end of the 2002 stock market downturn, stocks had lost $5 trillion in market capitalisation since the peak. By November 2000 most internet stocks had declined 75% from their highs, wiping out $1.755 trillion in value.\n\nThe late-1990s internet boom inflated on investment far ahead of profit, and when it burst the speculation died but the technology did not."
+    },
+    {
+      "url": "https://www.federalreservehistory.org/essays/dot-com-bubble",
+      "raw_content": "Investment poured into internet startups, often before they had profits, or even a viable business. When reality caught up in 2000, tech stocks collapsed. The technology endured."
+    }
+  ],
+  "failed_results": [],
+  "response_time": 0.19,
+  "usage": {
+    "credits": 1
+  },
+  "request_id": "fixture-extract"
+}

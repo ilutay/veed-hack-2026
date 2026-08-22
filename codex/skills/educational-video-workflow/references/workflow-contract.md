@@ -4,7 +4,8 @@ The workflow is split into stages that communicate through files rather than hid
 
 ## Canonical Artifacts
 
-- `lesson-script.json`: topic, objective, intro script, slide narration, visual briefs, and sources.
+- `research-brief.json`: grounded facts, sources, pedagogy, and next-topic directions from `topic_research`.
+- `lesson-script.json`: topic, objective, intro script, slide narration, visual briefs, and sources. Written from the brief; this stage does not research.
 - `asset-manifest.json`: generated media paths and provider metadata.
 - `webpage-build.json`: final page entrypoint, copied assets, and validation status.
 - `qa-report.md`: human-readable status and gaps.
