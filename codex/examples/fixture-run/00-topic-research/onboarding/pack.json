@@ -1,0 +1,115 @@
+{
+  "slug": "fixture-learner",
+  "interests": ["the dot-com bubble", "compound interest"],
+  "goal": "build a grounded starting point",
+  "quiz": {
+    "questions": [
+      {
+        "id": "q-01",
+        "prompt": "When did the NASDAQ Composite peak during the dot-com bubble?",
+        "choices": [
+          { "id": "a", "text": "10 March 1999" },
+          { "id": "b", "text": "10 March 2000" },
+          { "id": "c", "text": "9 October 2002" },
+          { "id": "d", "text": "November 2001" }
+        ],
+        "correct_id": "b",
+        "topic": "the dot-com bubble",
+        "source_id": "src-wikipedia-dotcom",
+        "rationale": "The NASDAQ Composite peaked at 5,048.62 on 10 March 2000."
+      },
+      {
+        "id": "q-02",
+        "prompt": "Between 1995 and its March 2000 peak, roughly how much did the NASDAQ Composite rise?",
+        "choices": [
+          { "id": "a", "text": "About 100%" },
+          { "id": "b", "text": "About 250%" },
+          { "id": "c", "text": "About 600%" },
+          { "id": "d", "text": "About 1,200%" }
+        ],
+        "correct_id": "c",
+        "topic": "the dot-com bubble",
+        "source_id": "src-wikipedia-dotcom",
+        "rationale": "The commonly misquoted figure is ~400%; the grounded figure is 600%."
+      },
+      {
+        "id": "q-03",
+        "prompt": "If you earn 10% a year, about how long does it take for money to double (rule of 72)?",
+        "choices": [
+          { "id": "a", "text": "About 5 years" },
+          { "id": "b", "text": "About 7 years" },
+          { "id": "c", "text": "About 10 years" },
+          { "id": "d", "text": "About 12 years" }
+        ],
+        "correct_id": "b",
+        "topic": "compound interest",
+        "source_id": "src-fixture-compound",
+        "rationale": "Rule of 72: 72 / 10 ≈ 7.2 years."
+      },
+      {
+        "id": "q-04",
+        "prompt": "What is the main misconception the fixture brief warns against?",
+        "choices": [
+          { "id": "a", "text": "That the internet itself disappeared after 2000" },
+          { "id": "b", "text": "That the NASDAQ never recovered" },
+          { "id": "c", "text": "That only banks lost money" },
+          { "id": "d", "text": "That the bubble peaked in 1995" }
+        ],
+        "correct_id": "a",
+        "topic": "the dot-com bubble",
+        "source_id": "src-wikipedia-dotcom",
+        "rationale": "The speculation died; the technology did not."
+      },
+      {
+        "id": "q-05",
+        "prompt": "Compound interest grows fastest when which of these is true?",
+        "choices": [
+          { "id": "a", "text": "Returns are withdrawn every year" },
+          { "id": "b", "text": "The rate is applied to a shrinking principal" },
+          { "id": "c", "text": "Earnings stay invested so later interest is earned on earlier interest" },
+          { "id": "d", "text": "The time horizon is a single day" }
+        ],
+        "correct_id": "c",
+        "topic": "compound interest",
+        "source_id": "src-fixture-compound",
+        "rationale": "Compounding requires leaving earnings in the principal."
+      }
+    ]
+  },
+  "recommendations": [],
+  "sources": [
+    {
+      "id": "src-wikipedia-dotcom",
+      "title": "Dot-com bubble",
+      "url": "https://en.wikipedia.org/wiki/Dot-com_bubble",
+      "publisher": "Wikipedia"
+    },
+    {
+      "id": "src-fixture-compound",
+      "title": "Compound interest (fixture)",
+      "url": "https://en.wikipedia.org/wiki/Compound_interest",
+      "publisher": "Wikipedia"
+    }
+  ],
+  "research": {
+    "provider": "fixture",
+    "mode": "dry-run",
+    "credits": 0,
+    "calls": 0,
+    "queries": [
+      {
+        "pass": "interests",
+        "query": "the dot-com bubble beginner key facts misconceptions",
+        "credits": 0
+      },
+      {
+        "pass": "level_quiz",
+        "query": "compound interest rule of 72 beginner quiz",
+        "credits": 0
+      }
+    ]
+  },
+  "style_notes": [
+    "Dry-run fixture pack. Not live-researched. Live mode would query Tavily for the learner's stated interests."
+  ]
+}
