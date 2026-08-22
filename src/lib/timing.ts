@@ -2,7 +2,7 @@
  * Playback timing model — docs/riso-system.md §7.
  *
  * Pure function. The Node test (`tests/test_player_timing.mjs`) imports this
- * file directly; keep it free of DOM and of Next.js APIs.
+ * file directly; keep it free of DOM and of framework APIs.
  */
 
 export type TimingSegment = {

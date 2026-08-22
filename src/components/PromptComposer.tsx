@@ -1,5 +1,3 @@
-"use client";
-
 import { useCodexAction } from "@/components/CodexActionProvider";
 import { WidthFollowTitle } from "@/components/WidthFollowTitle";
 import type { PromptComposerProps } from "@/lib/schemas";

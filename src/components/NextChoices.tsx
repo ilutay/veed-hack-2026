@@ -1,5 +1,3 @@
-"use client";
-
 import { useCodexAction } from "@/components/CodexActionProvider";
 import type { ChoiceLabel, NextChoicesProps } from "@/lib/schemas";
 import { useEffect, useState } from "react";

@@ -9,7 +9,6 @@ artifacts/
 # App
 /node_modules
 /.next/
-/out/
 /dist
 *.tsbuildinfo
 __pycache__/

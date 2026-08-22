@@ -1,5 +1,3 @@
-"use client";
-
 import { useCodexAction } from "@/components/CodexActionProvider";
 import type { LessonPlayerProps } from "@/lib/schemas";
 import { buildBoundaries, type TimingBundle } from "@/lib/timing";
@@ -349,7 +347,6 @@ export function LessonPlayer({ run_id, runBase }: LessonPlayerProps) {
             <span className="placeholder-tag">placeholder</span>
           ) : null}
           {slideSrc && !imgBroken[slide?.id || ""] ? (
-            // eslint-disable-next-line @next/next/no-img-element
             <img
               key={slide?.id}
               className="snap"
