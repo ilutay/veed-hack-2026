@@ -16,13 +16,48 @@ Codex --(component command)--> GymBlock -> ComponentRenderer -> gym component
 
 ## Run it
 
+Two processes. The browser holds the Tambo registry; the bridge holds codex-cli.
+There is no Tambo server — registry-only means there is nothing else to run.
+
 ```bash
 npm install
-npm run dev        # local runtime at the printed URL
-npm test           # 13 tests: registry, validation, event channel, no-network
+npm run schema     # regenerate the Codex output schema from the zod registry
+npm run bridge     # terminal 1 — codex bridge on 127.0.0.1:8787
+npm run dev        # terminal 2 — UI on 127.0.0.1:5173 (proxies /api to the bridge)
+```
+
+Then open the UI: it asks Codex for an opening exercise, renders it through the
+registry, and sends each interaction back for the next one.
+
+```bash
+npm test           # 14 tests, no network
+npm run test:live  # opt-in: one real codex-cli turn, rendered end to end
 npm run typecheck
 npm run build
 ```
+
+### The loop, concretely
+
+```
+browser  POST /api/turn {state}
+  -> bridge  sudo -u codex-runner codex exec --output-schema component-command.schema.json
+  -> codex   returns {componentName, props} constrained to the registry
+  -> browser ComponentRenderer resolves it -> gym component renders
+  -> learner interacts -> CodexActionProvider.emit -> POST /api/turn again
+```
+
+`server/bridge.mjs` is the only thing that talks to codex-cli, and it runs it as
+`codex-runner` — the sole account holding the auth file. The browser never sees
+a credential. Ids (`componentId`, `episodeId`, `turnId`) are assigned by the
+bridge, never by the model.
+
+### Verified live
+
+A real turn against `gpt-5.6-sol` returns a schema-valid command in ~5-8s, and
+it adapts: a fresh-learner state yields `ProbeArena`; a state describing a wrong
+answer with one retry left yields `TargetedRetryGym`. `npm run test:live`
+asserts the returned name is in the registry allowlist, that its props pass the
+same zod schema the renderer uses, and that the component reaches the DOM.
 
 ## Dependencies
 
@@ -32,8 +67,40 @@ Pinned for hackathon reproducibility:
 | --- | --- | --- |
 | `@tambo-ai/react` | `1.3.0` (exact) | Registry + renderer. Current registry version. |
 | `zod` | `^4.0.0` | Props schemas; zod 4 implements Standard Schema, which is what the renderer validates through. |
-| `zod-to-json-schema` | `^3.25.1` | Declared peer of `@tambo-ai/react`. |
+| `zod-to-json-schema` | `^3.25.1` | Declared peer of `@tambo-ai/react`. **Do not call it.** See below. |
 | `@modelcontextprotocol/sdk` | `^1.27.1` | **Also a declared peer** of `@tambo-ai/react`, and easy to miss — npm auto-installs peers, so an omission only surfaces under `--legacy-peer-deps` or a strict CI install. We register no MCP servers; this is a peer-resolution requirement, not a feature. |
+
+### `zod-to-json-schema` is incompatible with zod 4 — and fails silently
+
+The pinned pair `zod@^4` + `zod-to-json-schema@^3.25.1` cannot be used together
+for conversion. `zodToJsonSchema()` predates zod 4 and, given a v4 schema,
+returns a bare `{"$schema": "..."}` — every property dropped, no error thrown.
+
+```
+zod-to-json-schema@3 -> {"$schema":"http://json-schema.org/draft-07/schema#"}
+z.toJSONSchema  (v4)  -> {"type":"object","properties":{...},"required":[...]}
+```
+
+Use zod 4's native `z.toJSONSchema()`, as `scripts/emit-codex-schema.ts` does.
+The package stays in `package.json` only to satisfy Tambo's peer dependency.
+This silently produced an empty schema for Codex before it was caught.
+
+### Codex structured outputs are stricter than JSON Schema
+
+Two rejections worth knowing before writing an `--output-schema` file:
+
+- `oneOf` is not permitted, and the root must be an object. The command schema
+  is therefore a flat object with a `componentName` enum plus an `anyOf` over
+  the prop shapes — so the schema does *not* enforce that the name matches the
+  props. The client re-validates and each component guards its own props.
+- Every object needs `additionalProperties: false`. zod omits it on nested
+  objects, so the generator injects it everywhere.
+
+### The bridge's work directory must be writable by `codex-runner`
+
+`mkdtemp` creates a `0700` directory owned by the bridge's user; codex-cli runs
+as `codex-runner` and cannot write `--output-last-message` into it. The bridge
+widens it to `0777` for the turn and removes it afterwards.
 
 ## Layout
 
@@ -45,6 +112,9 @@ Pinned for hackathon reproducibility:
 | `src/gym/GymBlock.tsx` | Turns a Codex command into a `TamboComponentContent` and renders it. |
 | `src/codex/CodexActionProvider.tsx` | Our event channel back to Codex. |
 | `src/gym/components/` | The four gym surfaces + `GymRenderError`. |
+| `src/codex/client.ts` | Browser -> bridge call. The only network call the gym makes. |
+| `server/bridge.mjs` | Runs codex-cli turns; the only holder of the codex path. |
+| `scripts/emit-codex-schema.ts` | Generates the Codex output schema from the zod registry. |
 
 ## Verified behaviour of the Tambo seam
 

@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "bridge": "node server/bridge.mjs",
+    "schema": "vite-node scripts/emit-codex-schema.ts",
+    "test:live": "CODEX_LIVE=1 vitest run src/codex/live.e2e.test.tsx"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",

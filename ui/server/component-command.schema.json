@@ -1,0 +1,210 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "componentName",
+    "props"
+  ],
+  "properties": {
+    "componentName": {
+      "enum": [
+        "ProbeArena",
+        "CreditAssignmentReplay",
+        "TargetedRetryGym",
+        "LayerOrderTransferGym"
+      ]
+    },
+    "props": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "probeId": {
+              "type": "string",
+              "description": "Pioneer probe identifier"
+            },
+            "prompt": {
+              "type": "string",
+              "description": "The diagnostic question posed to the learner"
+            },
+            "choices": {
+              "minItems": 2,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Stable id echoed back in the emitted event"
+                  },
+                  "label": {
+                    "type": "string",
+                    "description": "Answer text shown to the learner"
+                  }
+                },
+                "required": [
+                  "id",
+                  "label"
+                ],
+                "additionalProperties": false
+              },
+              "description": "Two or more answer options"
+            },
+            "skill": {
+              "type": "string",
+              "description": "Skill tag this probe measures"
+            }
+          },
+          "required": [
+            "probeId",
+            "prompt",
+            "choices",
+            "skill"
+          ],
+          "description": "A Pioneer-certified diagnostic exercise",
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "probeId": {
+              "type": "string",
+              "description": "Probe this replay explains"
+            },
+            "responseText": {
+              "type": "string",
+              "description": "The learner's response, verbatim"
+            },
+            "spans": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "start": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991,
+                    "description": "Inclusive start offset into responseText"
+                  },
+                  "end": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991,
+                    "description": "Exclusive end offset into responseText"
+                  },
+                  "verdict": {
+                    "type": "string",
+                    "enum": [
+                      "credit",
+                      "blame",
+                      "neutral"
+                    ],
+                    "description": "How this span moved the score"
+                  },
+                  "note": {
+                    "type": "string",
+                    "description": "Why this span earned its verdict"
+                  }
+                },
+                "required": [
+                  "start",
+                  "end",
+                  "verdict",
+                  "note"
+                ],
+                "additionalProperties": false
+              },
+              "description": "Evidence spans grounding the feedback in the response"
+            },
+            "score": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Normalised score for the attempt"
+            }
+          },
+          "required": [
+            "probeId",
+            "responseText",
+            "spans",
+            "score"
+          ],
+          "description": "Visual feedback grounded in response evidence",
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "probeId": {
+              "type": "string",
+              "description": "Probe being retried"
+            },
+            "skill": {
+              "type": "string",
+              "description": "Skill the retry drills"
+            },
+            "hint": {
+              "type": "string",
+              "description": "Scaffolding shown before the retry"
+            },
+            "attemptsRemaining": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "How many retries the learner has left"
+            }
+          },
+          "required": [
+            "probeId",
+            "skill",
+            "hint",
+            "attemptsRemaining"
+          ],
+          "description": "A scaffolded retry aimed at one failed skill",
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taskId": {
+              "type": "string",
+              "description": "Transfer task identifier"
+            },
+            "instruction": {
+              "type": "string",
+              "description": "What the learner must order and why"
+            },
+            "layers": {
+              "minItems": 2,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "label": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "label"
+                ],
+                "additionalProperties": false
+              },
+              "description": "Layers presented in scrambled order"
+            }
+          },
+          "required": [
+            "taskId",
+            "instruction",
+            "layers"
+          ],
+          "description": "Tests whether a learned ordering transfers to a new surface",
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}
