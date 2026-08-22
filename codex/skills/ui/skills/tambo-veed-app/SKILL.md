@@ -1,6 +1,6 @@
 ---
 name: tambo-veed-app
-description: How this project wires VEED video generation into a Tambo generative-UI React app — the non-blocking submit/poll shape, request-object props instead of generated URLs, the mandatory server route for FAL_KEY, the cost gate, and the streaming/expiry gotchas. Use when registering a TamboComponent or TamboTool that touches video, when writing `src/lib/tambo.ts` or an `/api/veed` route, when a chat turn hangs while a video renders, when a `<video>` prop is undefined, when deciding whether a tool should be streamable, or when the agent is about to spend money on a generation. Covers only the Tambo×VEED seams — install `npx skills add tambo-ai/tambo` for Tambo mechanics and see the companion `veed-fal-api` skill in `videos/skills/` for endpoint schemas and prices.
+description: How this project wires VEED video generation into a Tambo generative-UI React app — the non-blocking submit/poll shape, request-object props instead of generated URLs, the mandatory server route for FAL_KEY, the cost gate, and the streaming/expiry gotchas. Use when registering a TamboComponent or TamboTool that touches video, when writing `src/lib/tambo.ts` or an `/api/veed` route, when a chat turn hangs while a video renders, when a `<video>` prop is undefined, when deciding whether a tool should be streamable, or when the agent is about to spend money on a generation. Covers only the Tambo×VEED seams — install `npx skills add tambo-ai/tambo` for Tambo mechanics and see the companion `veed-fal-api` skill in `codex/skills/videos/skills/` for endpoint schemas and prices.
 ---
 
 # Tambo × VEED
@@ -8,13 +8,13 @@ description: How this project wires VEED video generation into a Tambo generativ
 This project puts a VEED talking-head generator behind a Tambo agent: the user asks in chat, the agent picks a component and calls a tool, a video renders. The two halves are individually well documented — the failure modes all live in the seam between them, and that is all this skill covers.
 
 - **Tambo mechanics** (scaffolding, `TamboProvider`, registration, threads, MCP): `npx skills add tambo-ai/tambo` installs the official `generative-ui` and `build-with-tambo` skills. Don't reinvent them.
-- **VEED endpoints, schemas, prices**: [videos/skills/veed-fal-api](../../../videos/skills/veed-fal-api/SKILL.md).
+- **VEED endpoints, schemas, prices**: [codex/skills/videos/skills/veed-fal-api](../../../videos/skills/veed-fal-api/SKILL.md).
 
 ## Status: nothing is scaffolded yet (22 Aug 2026)
 
-This lives in `veed-hack-2026` (Taste Labs), on the `ui` branch. `ui/` holds no code yet — the paths below (`src/lib/tambo.ts`, `src/app/api/veed/route.ts`, `src/components/`) come from the Tambo quickstart docs read 22 Aug 2026, **not** from this repo, and assume the app is rooted at `ui/`. **Re-ground this skill against the real scaffold** once `npx tambo create-app` (or `npx tambo full-send`) has run.
+This lives in `veed-hack-2026` (Taste Labs), on the `ui` branch. `codex/skills/ui/` holds no code yet — the paths below (`src/lib/tambo.ts`, `src/app/api/veed/route.ts`, `src/components/`) come from the Tambo quickstart docs read 22 Aug 2026, **not** from this repo, and assume the app is rooted at `codex/skills/ui/`. **Re-ground this skill against the real scaffold** once `npx tambo create-app` (or `npx tambo full-send`) has run.
 
-The companion VEED skill lives in the other workstream at `videos/skills/veed-fal-api/` — relative links below cross the repo root.
+The companion VEED skill lives in the other workstream at `codex/skills/videos/skills/veed-fal-api/`.
 
 ## The rule everything else follows from
 
@@ -136,7 +136,7 @@ return Response.json({
 
 Surface `estimated_cost_usd` in the component so the spend is visible in the thread. A 409 is a normal outcome — have the agent relay it and ask, not retry.
 
-Also route redubs correctly: if the user already has a video, `veed/lipsync` does the same job for ~1/22nd the cost. Cheapest correct endpoint wins — the table is in [videos/skills/veed-fal-api](../../../videos/skills/veed-fal-api/SKILL.md).
+Also route redubs correctly: if the user already has a video, `veed/lipsync` does the same job for ~1/22nd the cost. Cheapest correct endpoint wins — the table is in [codex/skills/videos/skills/veed-fal-api](../../../videos/skills/veed-fal-api/SKILL.md).
 
 ## Two rendering gotchas
 
