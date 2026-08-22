@@ -10,10 +10,28 @@ Server and tool details below were current as of 2026-08-22, sourced from
 that page (or `codex mcp list` / `claude mcp list` tool descriptions) if a
 call is rejected for an unknown field — VEED's schema is not vendored here.
 
+## Default character and voice
+
+Unless a work order or user names a different character/voice for the run,
+skip `list_characters`/`list_voices` and use these ids directly:
+
+- `characterId`: `"character-19"` (male avatar, chosen 2026-08-22 by
+  eyeballing `list_characters` thumbnails)
+- `voiceId`: `"en-CA-LiamNeural"` (male, English (Canada) — the first
+  general-purpose English male voice returned by `list_voices({locale: "en",
+  gender: "Male"})`; no `en-US` male voice was on the first two result pages)
+
+This is a fixed default for unattended `test`/`live` runs, not a
+per-conversation "auto-pick something" instruction — reuse the same two ids
+every time rather than re-deriving them, so repeated runs are reproducible.
+Re-run `list_characters`/`list_voices` (see [Tool sequence](#tool-sequence))
+only when asked to use a different character or voice.
+
 ## Tool sequence
 
 Call in this order. Do not skip `confirm_fabric_video` — it is the only place
-the cost is shown before credits are spent.
+the cost is shown before credits are spent. Steps 1–2 are skipped when using
+the default character/voice above.
 
 1. **`list_characters`** — optional `gender` filter (`"male"` \| `"female"`).
    Returns avatar `id`s. Pick one, or surface the carousel for a human to
