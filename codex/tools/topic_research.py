@@ -9,7 +9,6 @@ tavily passes. Do not set WORKFLOW_MODE=live from this tool.
 from __future__ import annotations
 
 import argparse
-import concurrent.futures
 import json
 import os
 import re
@@ -404,26 +403,15 @@ def run_live_passes(
     expected = {"ground_facts": 1, "strategy": 1, "next_topics": 1, "extract": 1}
     responses: dict[str, dict[str, Any]] = {}
     credits = 0
-
-    # The three search passes share no inputs, so they go out together. Run
-    # back-to-back they cost the sum of their latencies (~3.5s, dominated by the
-    # 20-result next_topics pass); in parallel the stage costs the slowest one
-    # (~0.6s). Only /extract has to wait, since it reads ground_facts' URLs.
     for name, payload in search_payloads.items():
         write_json(
             paths.provider_dir / f"{name}-request.json",
             {"mode": "live", "endpoint": "/search", "payload": payload},
         )
-    with concurrent.futures.ThreadPoolExecutor(max_workers=len(search_payloads)) as executor:
-        futures = {
-            name: executor.submit(client.search, payload)
-            for name, payload in search_payloads.items()
-        }
-        for name, future in futures.items():
-            response = future.result()
-            write_json(paths.provider_dir / f"{name}-response.json", sanitize_provider_json(response))
-            responses[name] = response
-            credits += usage_credits(response, expected[name])
+        response = client.search(payload)
+        write_json(paths.provider_dir / f"{name}-response.json", sanitize_provider_json(response))
+        responses[name] = response
+        credits += usage_credits(response, expected[name])
 
     extract_payload = build_extract_payload(search_results(responses["ground_facts"]))
     write_json(
