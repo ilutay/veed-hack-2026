@@ -18,15 +18,11 @@ export function PromptComposer({ seed_topic }: PromptComposerProps) {
         void dispatch({ type: "topic_submitted", payload: { topic: value } });
       }}
     >
-      {demo ? (
-        <WidthFollowTitle>What do you want to learn?</WidthFollowTitle>
-      ) : (
-        <h1 className="display misreg">What do you want to learn?</h1>
-      )}
+      <WidthFollowTitle>What do you want to learn?</WidthFollowTitle>
       <p className="objective">
         {demo
-          ? "Demo mode plays the fixture lesson. The title stretches under the pointer."
-          : "Type a topic. Codex researches it, writes a 15-second script, then generates slides and voiceover."}
+          ? "Demo mode runs the fixture lesson. Pointer movement smoothly animates the variable font heading."
+          : "Type any topic. The engine performs research, crafts an educational script, and synthesizes visual slides."}
       </p>
       <div className="composer-row">
         <input
@@ -34,7 +30,7 @@ export function PromptComposer({ seed_topic }: PromptComposerProps) {
           name="topic"
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
-          placeholder="e.g. the dot-com bubble"
+          placeholder="e.g. the dot-com bubble, quantum entanglement..."
           autoComplete="off"
           disabled={pending}
         />
@@ -43,7 +39,7 @@ export function PromptComposer({ seed_topic }: PromptComposerProps) {
           type="submit"
           disabled={pending || !topic.trim()}
         >
-          {pending ? "Starting…" : "Start lesson"}
+          {pending ? "Starting…" : "Start lesson →"}
         </button>
       </div>
     </form>

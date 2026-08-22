@@ -3,10 +3,23 @@ import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-function repoRoot(): string {
-  const cwd = process.cwd();
-  if (existsSync(path.join(cwd, "codex/tools/run_workflow.py"))) return cwd;
-  throw new Error("codex/tools/run_workflow.py not found from process.cwd()");
+export function repoRoot(): string {
+  const hasAppRoot = (dir: string) =>
+    existsSync(path.join(dir, "src")) && existsSync(path.join(dir, "server"));
+
+  if (hasAppRoot(process.cwd())) return process.cwd();
+
+  let dir = process.cwd();
+  for (let i = 0; i < 10; i++) {
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+    if (hasAppRoot(dir)) return dir;
+  }
+
+  throw new Error(
+    "repo root not found (expected src/ and server/ under process.cwd() or a parent)",
+  );
 }
 
 function hasKey(name: string): boolean {
@@ -30,6 +43,10 @@ export async function spawnWorkflow(
   topic: string,
 ): Promise<void> {
   const root = repoRoot();
+  const script = path.join(root, "codex/tools/run_workflow.py");
+  if (!existsSync(script)) {
+    throw new Error("codex/tools/run_workflow.py not found from process.cwd()");
+  }
   const out = path.join(root, "artifacts/educational-video", runId);
   await mkdir(out, { recursive: true });
   await writeFile(

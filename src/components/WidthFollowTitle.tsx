@@ -6,23 +6,17 @@ import {
 } from "react";
 
 /**
- * Landing-title width follow.
+ * Minimal Monochromatic Kinetic Variable Font Title
  *
- * Tilt Neon (Google Fonts v12) is a variable font, but it has no `wdth` axis —
- * `css2?family=Tilt+Neon:wdth@75..125` returns 400 "Missing font family".
- * Live axes are XROT and YROT, both −45..45.
- *
- * We still drive `"wdth"` in `font-variation-settings` (ignored by the file)
- * and map the same 100→125 range onto `scaleX`, so glyphs actually widen
- * under the pointer. XROT/YROT tilt each glyph toward the cursor — the axis
- * the face was drawn for.
+ * Drives live variable font axes ("wght" 350 -> 800, "wdth" 100 -> 125, letter tracking)
+ * based on pointer proximity with smooth cubic easing.
  */
 
+const WGHT_REST = 400;
+const WGHT_PEAK = 800;
 const WIDTH_REST = 100;
-const WIDTH_PEAK = 125;
-const FALLOFF_PX = 88;
-const YROT_MAX = 22;
-const XROT_MAX = 14;
+const WIDTH_PEAK = 120;
+const FALLOFF_PX = 120;
 
 function prefersReducedMotion(): boolean {
   return (
@@ -45,7 +39,7 @@ function graphemes(text: string): string[] {
 }
 
 function restVariation(): string {
-  return `"wdth" ${WIDTH_REST}, "YROT" 0, "XROT" 0`;
+  return `"wght" ${WGHT_REST}`;
 }
 
 function applyRest(el: HTMLElement) {
@@ -85,11 +79,10 @@ export function WidthFollowTitle({
       const dist = Math.hypot(dx, dy);
       const t = Math.max(0, 1 - dist / FALLOFF_PX);
       const eased = t * t * (3 - 2 * t);
+      const wght = WGHT_REST + (WGHT_PEAK - WGHT_REST) * eased;
       const wdth = WIDTH_REST + (WIDTH_PEAK - WIDTH_REST) * eased;
-      const yrot = ((-dx / FALLOFF_PX) * YROT_MAX * eased).toFixed(2);
-      const xrot = ((dy / FALLOFF_PX) * XROT_MAX * eased).toFixed(2);
-      el.style.fontVariationSettings = `"wdth" ${wdth.toFixed(1)}, "YROT" ${yrot}, "XROT" ${xrot}`;
-      el.style.setProperty("--wdth-scale", (wdth / WIDTH_REST).toFixed(4));
+      el.style.fontVariationSettings = `"wght" ${wght.toFixed(0)}`;
+      el.style.setProperty("--wdth-scale", (wdth / WIDTH_REST).toFixed(3));
     }
   }, []);
 

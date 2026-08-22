@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taste-labs.local/contracts/learner-profile.schema.json",
+  "title": "LearnerProfile",
+  "description": "Named learner identity plus onboarding state. Lives at artifacts/profiles/{slug}/learner-profile.json. Taste axes live in the sibling taste-profile.json (taste-profile.schema.json). Chat turns live in chat.json.",
+  "type": "object",
+  "required": [
+    "version",
+    "name",
+    "slug",
+    "created_at",
+    "updated_at",
+    "onboarding"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "slug": {
+      "description": "Filesystem key: lowercase [a-z0-9-] derived from name. Case-insensitive lookup.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "created_at": { "type": "string", "minLength": 1 },
+    "updated_at": { "type": "string", "minLength": 1 },
+    "onboarding": {
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "description": "new = just created; interests = waiting for survey; researching = Tavily quiz pack in flight; quiz = quiz ready; scoring = recommend stage in flight; complete = recommendations ready.",
+          "type": "string",
+          "enum": [
+            "new",
+            "interests",
+            "researching",
+            "quiz",
+            "scoring",
+            "complete"
+          ]
+        },
+        "interests": {
+          "type": "array",
+          "maxItems": 5,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "goal": { "type": "string" },
+        "level": {
+          "type": "string",
+          "enum": ["beginner", "intermediate", "advanced"]
+        },
+        "quiz_score": {
+          "type": "object",
+          "required": ["correct", "total"],
+          "additionalProperties": false,
+          "properties": {
+            "correct": { "type": "integer", "minimum": 0 },
+            "total": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "recommended_topics": {
+          "type": "array",
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "required": ["topic", "why", "level"],
+            "additionalProperties": false,
+            "properties": {
+              "topic": { "type": "string", "minLength": 1 },
+              "why": { "type": "string", "minLength": 1 },
+              "level": {
+                "type": "string",
+                "enum": ["beginner", "intermediate", "advanced"]
+              },
+              "source_id": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

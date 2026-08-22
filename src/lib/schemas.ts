@@ -68,7 +68,51 @@ export const TasteFeedbackSchema = z
     "Reaction chips from the taste-profile enum. Props are the run id.",
   );
 
+export const ProfileGateSchema = z
+  .object({})
+  .describe(
+    "Show on boot when no learner profile is in localStorage. Name field; POST /api/profile then dispatch profile_entered.",
+  );
+
+export const InterestSurveySchema = z
+  .object({
+    slug: z
+      .string()
+      .describe("Learner profile slug to POST interests against"),
+  })
+  .describe(
+    "Show when a new profile needs an interest survey. Dispatch interests_submitted after POST.",
+  );
+
+export const LevelQuizSchema = z
+  .object({
+    slug: z
+      .string()
+      .describe(
+        "Learner profile slug. Polls GET /api/profile/:slug until quiz questions exist.",
+      ),
+  })
+  .describe(
+    "Show after interests are submitted. Fetches the level quiz; never takes correct answers as props.",
+  );
+
+export const RecommendedTopicsSchema = z
+  .object({
+    slug: z
+      .string()
+      .describe(
+        "Learner profile slug. Reads recommended_topics from the profile.",
+      ),
+  })
+  .describe(
+    "Show when onboarding is complete. Click a topic to dispatch recommendation_selected.",
+  );
+
 export type PromptComposerProps = z.infer<typeof PromptComposerSchema>;
 export type LessonPlayerProps = z.infer<typeof LessonPlayerSchema>;
 export type NextChoicesProps = z.infer<typeof NextChoicesSchema>;
 export type TasteFeedbackProps = z.infer<typeof TasteFeedbackSchema>;
+export type ProfileGateProps = z.infer<typeof ProfileGateSchema>;
+export type InterestSurveyProps = z.infer<typeof InterestSurveySchema>;
+export type LevelQuizProps = z.infer<typeof LevelQuizSchema>;
+export type RecommendedTopicsProps = z.infer<typeof RecommendedTopicsSchema>;

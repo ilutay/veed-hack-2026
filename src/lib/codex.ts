@@ -1,4 +1,5 @@
 import type { TamboComponentContent } from "@tambo-ai/react";
+import type { LearnerProfile } from "./onboarding";
 import type { ChoiceLabel, TasteReaction } from "./schemas";
 
 export type CodexAction =
@@ -11,7 +12,20 @@ export type CodexAction =
       type: "taste_reaction";
       payload: { run_id: string; reaction: TasteReaction };
     }
-  | { type: "playback_ended"; payload: { run_id: string } };
+  | { type: "playback_ended"; payload: { run_id: string } }
+  | {
+      type: "profile_entered";
+      payload: { name: string; slug: string; created: boolean };
+    }
+  | {
+      type: "interests_submitted";
+      payload: { slug: string; interests: string[]; goal?: string };
+    }
+  | {
+      type: "quiz_submitted";
+      payload: { slug: string; answers: Record<string, string> };
+    }
+  | { type: "recommendation_selected"; payload: { topic: string } };
 
 export type CodexActionResponse = {
   status: "submitted";
@@ -19,6 +33,7 @@ export type CodexActionResponse = {
   turnId: string;
   run_id?: string;
   blocks: TamboComponentContent[];
+  profile?: LearnerProfile;
 };
 
 export function newId(prefix: string): string {
@@ -36,4 +51,39 @@ export function componentBlock(
     name,
     props,
   };
+}
+
+export function completeOnboardingBlocks(
+  profile: LearnerProfile,
+  idPrefix = "boot",
+): TamboComponentContent[] {
+  const slug = profile.slug;
+  const seed = profile.onboarding.recommended_topics?.[0]?.topic;
+  return [
+    componentBlock("RecommendedTopics", { slug }, `${idPrefix}-recs`),
+    componentBlock(
+      "PromptComposer",
+      seed ? { seed_topic: seed } : {},
+      `${idPrefix}-composer`,
+    ),
+  ];
+}
+
+/** Next Tambo blocks from onboarding status. Chat is not a block. */
+export function blocksForProfile(
+  profile: LearnerProfile,
+  idPrefix = "boot",
+): TamboComponentContent[] {
+  const slug = profile.slug;
+  switch (profile.onboarding.status) {
+    case "new":
+    case "interests":
+      return [componentBlock("InterestSurvey", { slug }, `${idPrefix}-interests`)];
+    case "researching":
+    case "quiz":
+    case "scoring":
+      return [componentBlock("LevelQuiz", { slug }, `${idPrefix}-quiz`)];
+    case "complete":
+      return completeOnboardingBlocks(profile, idPrefix);
+  }
 }
