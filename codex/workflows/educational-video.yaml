@@ -1,0 +1,98 @@
+name: educational-video
+description: Generate educational video content from a topic using Codex skills, subagents, APIs, and MCP tools.
+version: 0.1.0
+
+inputs:
+  topic:
+    type: string
+    required: true
+    description: The subject the learner wants to understand.
+  learner_profile:
+    type: object
+    required: false
+    description: Optional level, audience, tone, constraints, and preferred duration.
+  output_dir:
+    type: string
+    required: false
+    default: artifacts/educational-video
+
+contracts:
+  lesson_script: ../contracts/lesson-script.schema.json
+  asset_manifest: ../contracts/asset-manifest.schema.json
+  webpage_build: ../contracts/webpage-build.schema.json
+
+stages:
+  - id: research_script
+    agent: ../subagents/research-script-agent.md
+    skill: ../skills/topic-research-script
+    mode: sequential
+    input:
+      - topic
+      - learner_profile
+    output:
+      - lesson_script.json
+      - sources.json
+
+  - id: content_generation
+    mode: parallel
+    depends_on:
+      - research_script
+    branches:
+      - id: talking_head_intro
+        agent: ../subagents/talking-head-agent.md
+        skill: ../skills/veed-talking-head
+        output:
+          - talking-head-intro.mp4
+          - talking-head-metadata.json
+      - id: slide_images
+        agent: ../subagents/slide-image-agent.md
+        skill: ../skills/slide-image-generation
+        fan_out: slides
+        max_parallel: 6
+        output:
+          - slide-images/*.png
+          - slide-image-prompts.json
+      - id: voiceover_video
+        agent: ../subagents/voiceover-agent.md
+        skill: ../skills/voiceover-video-generation
+        output:
+          - voiceover.mp4
+          - narration-timings.json
+
+  - id: assemble_webpage
+    agent: ../subagents/page-assembly-agent.md
+    skill: ../skills/learning-page-assembly
+    mode: sequential
+    depends_on:
+      - content_generation
+    input:
+      - lesson_script.json
+      - talking-head-intro.mp4
+      - slide-images/*.png
+      - voiceover.mp4
+      - narration-timings.json
+    output:
+      - index.html
+      - assets/**
+      - webpage-build.json
+
+  - id: integration_qa
+    agent: ../subagents/integration-qa-agent.md
+    mode: sequential
+    depends_on:
+      - assemble_webpage
+    output:
+      - qa-report.md
+
+api_boundaries:
+  - Do not call paid or mutating provider APIs unless credentials and an explicit run mode are configured.
+  - Prefer dry-run MCP/API contract tests while schemas and providers are still evolving.
+  - Persist every external response or normalized provider artifact under the stage output directory for replay.
+
+artifact_layout:
+  root: artifacts/educational-video/{run_id}
+  stage_dirs:
+    research_script: 01-research-script
+    content_generation: 02-content-generation
+    assemble_webpage: 03-webpage
+    integration_qa: 04-qa
