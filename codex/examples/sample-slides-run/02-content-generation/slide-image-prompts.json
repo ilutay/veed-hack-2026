@@ -1,0 +1,110 @@
+[
+  {
+    "endpoint": "fal-ai/z-image/turbo",
+    "payload": {
+      "acceleration": "regular",
+      "enable_prompt_expansion": false,
+      "enable_safety_checker": true,
+      "image_size": "landscape_16_9",
+      "num_images": 1,
+      "num_inference_steps": 8,
+      "output_format": "png",
+      "prompt": "Slide id: slide-01\nSlide title: One of the biggest tech booms\nVisual brief: Late-1990s stock market screen with tech stocks surging.\nKey points: late 1990s, tech boom\nShared style: Clean educational editorial illustration; concrete diagrams and visual metaphors over decorative backgrounds; consistent palette; no tiny labels or paragraphs inside the generated image; leave open space for webpage title and caption overlays. Lesson style notes: Archival late-1990s tech aesthetic shifting to modern in the final slide.; Cool blues and greens for the boom, desaturated reds for the crash.; No dense text or tiny labels in generated images; the education lives in the voiceover.; ASSUMPTION: no sources supplied with the script; the Nasdaq and market-value figures are unverified.\nNegative guidance: Avoid dense text, UI screenshots, tiny labels, misleading scientific diagrams, watermarks, logos, distorted hands, and cluttered backgrounds.",
+      "seed": 3000491393,
+      "sync_mode": false
+    },
+    "prompt": "Slide id: slide-01\nSlide title: One of the biggest tech booms\nVisual brief: Late-1990s stock market screen with tech stocks surging.\nKey points: late 1990s, tech boom\nShared style: Clean educational editorial illustration; concrete diagrams and visual metaphors over decorative backgrounds; consistent palette; no tiny labels or paragraphs inside the generated image; leave open space for webpage title and caption overlays. Lesson style notes: Archival late-1990s tech aesthetic shifting to modern in the final slide.; Cool blues and greens for the boom, desaturated reds for the crash.; No dense text or tiny labels in generated images; the education lives in the voiceover.; ASSUMPTION: no sources supplied with the script; the Nasdaq and market-value figures are unverified.\nNegative guidance: Avoid dense text, UI screenshots, tiny labels, misleading scientific diagrams, watermarks, logos, distorted hands, and cluttered backgrounds.",
+    "slide_id": "slide-01",
+    "title": "One of the biggest tech booms"
+  },
+  {
+    "endpoint": "fal-ai/z-image/turbo",
+    "payload": {
+      "acceleration": "regular",
+      "enable_prompt_expansion": false,
+      "enable_safety_checker": true,
+      "image_size": "landscape_16_9",
+      "num_images": 1,
+      "num_inference_steps": 8,
+      "output_format": "png",
+      "prompt": "Slide id: slide-02\nSlide title: Money before profits\nVisual brief: Collage of early internet companies, websites, and startup offices.\nKey points: speculative investment, no viable business\nShared style: Clean educational editorial illustration; concrete diagrams and visual metaphors over decorative backgrounds; consistent palette; no tiny labels or paragraphs inside the generated image; leave open space for webpage title and caption overlays. Lesson style notes: Archival late-1990s tech aesthetic shifting to modern in the final slide.; Cool blues and greens for the boom, desaturated reds for the crash.; No dense text or tiny labels in generated images; the education lives in the voiceover.; ASSUMPTION: no sources supplied with the script; the Nasdaq and market-value figures are unverified.\nNegative guidance: Avoid dense text, UI screenshots, tiny labels, misleading scientific diagrams, watermarks, logos, distorted hands, and cluttered backgrounds.",
+      "seed": 236945453,
+      "sync_mode": false
+    },
+    "prompt": "Slide id: slide-02\nSlide title: Money before profits\nVisual brief: Collage of early internet companies, websites, and startup offices.\nKey points: speculative investment, no viable business\nShared style: Clean educational editorial illustration; concrete diagrams and visual metaphors over decorative backgrounds; consistent palette; no tiny labels or paragraphs inside the generated image; leave open space for webpage title and caption overlays. Lesson style notes: Archival late-1990s tech aesthetic shifting to modern in the final slide.; Cool blues and greens for the boom, desaturated reds for the crash.; No dense text or tiny labels in generated images; the education lives in the voiceover.; ASSUMPTION: no sources supplied with the script; the Nasdaq and market-value figures are unverified.\nNegative guidance: Avoid dense text, UI screenshots, tiny labels, misleading scientific diagrams, watermarks, logos, distorted hands, and cluttered backgrounds.",
+    "slide_id": "slide-02",
+    "title": "Money before profits"
+  },
+  {
+    "endpoint": "fal-ai/z-image/turbo",
+    "payload": {
+      "acceleration": "regular",
+      "enable_prompt_expansion": false,
+      "enable_safety_checker": true,
+      "image_size": "landscape_16_9",
+      "num_images": 1,
+      "num_inference_steps": 8,
+      "output_format": "png",
+      "prompt": "Slide id: slide-03\nSlide title: The Nasdaq climbs\nVisual brief: Rising stock market graph alongside excited investors.\nKey points: 1995 to 2000, almost 400%\nShared style: Clean educational editorial illustration; concrete diagrams and visual metaphors over decorative backgrounds; consistent palette; no tiny labels or paragraphs inside the generated image; leave open space for webpage title and caption overlays. Lesson style notes: Archival late-1990s tech aesthetic shifting to modern in the final slide.; Cool blues and greens for the boom, desaturated reds for the crash.; No dense text or tiny labels in generated images; the education lives in the voiceover.; ASSUMPTION: no sources supplied with the script; the Nasdaq and market-value figures are unverified.\nNegative guidance: Avoid dense text, UI screenshots, tiny labels, misleading scientific diagrams, watermarks, logos, distorted hands, and cluttered backgrounds.",
+      "seed": 3658961159,
+      "sync_mode": false
+    },
+    "prompt": "Slide id: slide-03\nSlide title: The Nasdaq climbs\nVisual brief: Rising stock market graph alongside excited investors.\nKey points: 1995 to 2000, almost 400%\nShared style: Clean educational editorial illustration; concrete diagrams and visual metaphors over decorative backgrounds; consistent palette; no tiny labels or paragraphs inside the generated image; leave open space for webpage title and caption overlays. Lesson style notes: Archival late-1990s tech aesthetic shifting to modern in the final slide.; Cool blues and greens for the boom, desaturated reds for the crash.; No dense text or tiny labels in generated images; the education lives in the voiceover.; ASSUMPTION: no sources supplied with the script; the Nasdaq and market-value figures are unverified.\nNegative guidance: Avoid dense text, UI screenshots, tiny labels, misleading scientific diagrams, watermarks, logos, distorted hands, and cluttered backgrounds.",
+    "slide_id": "slide-03",
+    "title": "The Nasdaq climbs"
+  },
+  {
+    "endpoint": "fal-ai/z-image/turbo",
+    "payload": {
+      "acceleration": "regular",
+      "enable_prompt_expansion": false,
+      "enable_safety_checker": true,
+      "image_size": "landscape_16_9",
+      "num_images": 1,
+      "num_inference_steps": 8,
+      "output_format": "png",
+      "prompt": "Slide id: slide-04\nSlide title: Reality catches up\nVisual brief: Market chart suddenly turning sharply downward.\nKey points: 2000, bubble bursts\nShared style: Clean educational editorial illustration; concrete diagrams and visual metaphors over decorative backgrounds; consistent palette; no tiny labels or paragraphs inside the generated image; leave open space for webpage title and caption overlays. Lesson style notes: Archival late-1990s tech aesthetic shifting to modern in the final slide.; Cool blues and greens for the boom, desaturated reds for the crash.; No dense text or tiny labels in generated images; the education lives in the voiceover.; ASSUMPTION: no sources supplied with the script; the Nasdaq and market-value figures are unverified.\nNegative guidance: Avoid dense text, UI screenshots, tiny labels, misleading scientific diagrams, watermarks, logos, distorted hands, and cluttered backgrounds.",
+      "seed": 117585118,
+      "sync_mode": false
+    },
+    "prompt": "Slide id: slide-04\nSlide title: Reality catches up\nVisual brief: Market chart suddenly turning sharply downward.\nKey points: 2000, bubble bursts\nShared style: Clean educational editorial illustration; concrete diagrams and visual metaphors over decorative backgrounds; consistent palette; no tiny labels or paragraphs inside the generated image; leave open space for webpage title and caption overlays. Lesson style notes: Archival late-1990s tech aesthetic shifting to modern in the final slide.; Cool blues and greens for the boom, desaturated reds for the crash.; No dense text or tiny labels in generated images; the education lives in the voiceover.; ASSUMPTION: no sources supplied with the script; the Nasdaq and market-value figures are unverified.\nNegative guidance: Avoid dense text, UI screenshots, tiny labels, misleading scientific diagrams, watermarks, logos, distorted hands, and cluttered backgrounds.",
+    "slide_id": "slide-04",
+    "title": "Reality catches up"
+  },
+  {
+    "endpoint": "fal-ai/z-image/turbo",
+    "payload": {
+      "acceleration": "regular",
+      "enable_prompt_expansion": false,
+      "enable_safety_checker": true,
+      "image_size": "landscape_16_9",
+      "num_images": 1,
+      "num_inference_steps": 8,
+      "output_format": "png",
+      "prompt": "Slide id: slide-05\nSlide title: Trillions wiped out\nVisual brief: Empty startup office with discarded computers.\nKey points: companies disappeared, market value lost\nShared style: Clean educational editorial illustration; concrete diagrams and visual metaphors over decorative backgrounds; consistent palette; no tiny labels or paragraphs inside the generated image; leave open space for webpage title and caption overlays. Lesson style notes: Archival late-1990s tech aesthetic shifting to modern in the final slide.; Cool blues and greens for the boom, desaturated reds for the crash.; No dense text or tiny labels in generated images; the education lives in the voiceover.; ASSUMPTION: no sources supplied with the script; the Nasdaq and market-value figures are unverified.\nNegative guidance: Avoid dense text, UI screenshots, tiny labels, misleading scientific diagrams, watermarks, logos, distorted hands, and cluttered backgrounds.",
+      "seed": 3094424626,
+      "sync_mode": false
+    },
+    "prompt": "Slide id: slide-05\nSlide title: Trillions wiped out\nVisual brief: Empty startup office with discarded computers.\nKey points: companies disappeared, market value lost\nShared style: Clean educational editorial illustration; concrete diagrams and visual metaphors over decorative backgrounds; consistent palette; no tiny labels or paragraphs inside the generated image; leave open space for webpage title and caption overlays. Lesson style notes: Archival late-1990s tech aesthetic shifting to modern in the final slide.; Cool blues and greens for the boom, desaturated reds for the crash.; No dense text or tiny labels in generated images; the education lives in the voiceover.; ASSUMPTION: no sources supplied with the script; the Nasdaq and market-value figures are unverified.\nNegative guidance: Avoid dense text, UI screenshots, tiny labels, misleading scientific diagrams, watermarks, logos, distorted hands, and cluttered backgrounds.",
+    "slide_id": "slide-05",
+    "title": "Trillions wiped out"
+  },
+  {
+    "endpoint": "fal-ai/z-image/turbo",
+    "payload": {
+      "acceleration": "regular",
+      "enable_prompt_expansion": false,
+      "enable_safety_checker": true,
+      "image_size": "landscape_16_9",
+      "num_images": 1,
+      "num_inference_steps": 8,
+      "output_format": "png",
+      "prompt": "Slide id: slide-06\nSlide title: What survived\nVisual brief: Modern tech company office transitioning from a 1990s computer.\nKey points: the internet endured, Amazon\nShared style: Clean educational editorial illustration; concrete diagrams and visual metaphors over decorative backgrounds; consistent palette; no tiny labels or paragraphs inside the generated image; leave open space for webpage title and caption overlays. Lesson style notes: Archival late-1990s tech aesthetic shifting to modern in the final slide.; Cool blues and greens for the boom, desaturated reds for the crash.; No dense text or tiny labels in generated images; the education lives in the voiceover.; ASSUMPTION: no sources supplied with the script; the Nasdaq and market-value figures are unverified.\nNegative guidance: Avoid dense text, UI screenshots, tiny labels, misleading scientific diagrams, watermarks, logos, distorted hands, and cluttered backgrounds.",
+      "seed": 4207889490,
+      "sync_mode": false
+    },
+    "prompt": "Slide id: slide-06\nSlide title: What survived\nVisual brief: Modern tech company office transitioning from a 1990s computer.\nKey points: the internet endured, Amazon\nShared style: Clean educational editorial illustration; concrete diagrams and visual metaphors over decorative backgrounds; consistent palette; no tiny labels or paragraphs inside the generated image; leave open space for webpage title and caption overlays. Lesson style notes: Archival late-1990s tech aesthetic shifting to modern in the final slide.; Cool blues and greens for the boom, desaturated reds for the crash.; No dense text or tiny labels in generated images; the education lives in the voiceover.; ASSUMPTION: no sources supplied with the script; the Nasdaq and market-value figures are unverified.\nNegative guidance: Avoid dense text, UI screenshots, tiny labels, misleading scientific diagrams, watermarks, logos, distorted hands, and cluttered backgrounds.",
+    "slide_id": "slide-06",
+    "title": "What survived"
+  }
+]

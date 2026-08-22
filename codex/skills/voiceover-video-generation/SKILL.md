@@ -24,6 +24,11 @@ Use this skill for the narrated body of the educational video workflow.
 - `voiceover.mp3`
 - `narration-timings.json`
 
+`voiceover.mp3` and `narration-timings.json` feed `../slideshow-video-assembly`,
+which renders the mp4 locally. Timings that do not match the real audio length
+are fitted there, so mark estimates honestly rather than rounding them to the
+scripted duration.
+
 Read `references/voiceover-contract.md` when wiring a TTS, avatar, or video narration provider.
 Read `../educational-video-workflow/references/fal-media-contract.md` before
 changing fal model ids, payload fields, or artifact paths.

@@ -32,13 +32,33 @@ codex/
 |   |-- veed-talking-head/
 |   |-- slide-image-generation/
 |   |-- voiceover-video-generation/
+|   |-- slideshow-video-assembly/
 |   `-- learning-page-assembly/
 |-- contracts/
 |   |-- lesson-script.schema.json
 |   |-- asset-manifest.schema.json
 |   `-- webpage-build.schema.json
+|-- tools/
+|   |-- fal_media_agent.py
+|   `-- assemble_slideshow_video.py
 `-- examples/
-    `-- work-order.example.json
+    |-- work-order.example.json
+    |-- fixture-run/          # synthetic placeholders for schema tests
+    `-- sample-slides-run/    # real fal output: slides, voiceover, timings
 ```
 
 The `codex/skills/*/SKILL.md` files are written so they can later be promoted into real Codex skills. The `codex/subagents/*.md` files define the specialized agent briefs and expected handoffs.
+
+## Rendering the video locally
+
+`codex/examples/sample-slides-run/` is a finished content-generation stage, so
+the ffmpeg assembly step runs offline with no credentials:
+
+```bash
+python3 codex/tools/assemble_slideshow_video.py \
+  --content-dir codex/examples/sample-slides-run/02-content-generation \
+  --output artifacts/educational-video/sample/03-video/lesson-video.mp4
+```
+
+See `codex/skills/slideshow-video-assembly/SKILL.md` for the flags and the
+timing-fit policies.
