@@ -1,0 +1,14 @@
+[Unit]
+Description=Pioneer Gym narrow Codex action socket
+
+[Socket]
+ListenStream=/run/pioneer-gym/codex-action.sock
+SocketUser=codex-runner
+SocketGroup=pioneer-gym
+SocketMode=0660
+DirectoryMode=0750
+RemoveOnStop=true
+Service=pioneer-gym-codex-gateway.service
+
+[Install]
+WantedBy=sockets.target

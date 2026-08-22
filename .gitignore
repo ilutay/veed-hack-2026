@@ -9,3 +9,12 @@ artifacts/
 # OS / editor noise
 .DS_Store
 *.swp
+.gstack/
+
+# Local Next.js application state
+node_modules/
+.next/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
