@@ -4,6 +4,7 @@
 
 - `voice`
 - `language`
+- `speed`: MiniMax `voice_setting.speed` multiplier, default `1.2` (see SKILL.md)
 - `segments`: ordered slide narration segments
 - `target_duration_seconds`
 - `run_id`
