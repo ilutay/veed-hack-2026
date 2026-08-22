@@ -181,6 +181,7 @@ function codexJson(prompt, schema) {
     const schemaFile = join(dir, "schema.json");
     const outFile = join(dir, "last-message.json");
     writeFileSync(schemaFile, JSON.stringify(schema));
+    chmodSync(schemaFile, 0o644);
     const child = spawn(
       "sudo",
       [

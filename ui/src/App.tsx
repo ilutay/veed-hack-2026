@@ -168,6 +168,12 @@ function Studio() {
       void startLesson(pageAction.topic);
     } else if (pageAction.kind === "start_practice") {
       appendNovelGym(pageAction.prompt);
+    } else if (pageAction.kind === "render_block") {
+      append({
+        id: crypto.randomUUID(),
+        role: "assistant",
+        block: pageAction.command,
+      });
     } else {
       append({
         id: crypto.randomUUID(),

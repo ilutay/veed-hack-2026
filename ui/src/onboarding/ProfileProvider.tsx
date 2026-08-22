@@ -10,6 +10,8 @@ import {
   postRetry,
   PROFILE_POLL_MS,
 } from "./api";
+import { describeMessage, requestNextBlock } from "../codex/client";
+import type { CodexComponentCommand } from "../gym/GymBlock";
 import { slugFromName, type TasteReaction } from "./logic";
 import { activeSlug, loadLibrary, saveLibrary, setActiveSlug } from "./storage";
 import type { ChatTurn, LearnerProfile, LibraryEntry, QuizChoiceId } from "./types";
@@ -61,6 +63,7 @@ export interface ProfileContextValue {
 export type PageAction =
   | { kind: "start_lesson"; topic: string }
   | { kind: "start_practice"; prompt: string }
+  | { kind: "render_block"; command: CodexComponentCommand }
   | { kind: "notice"; summary: string };
 
 const ProfileContext = createContext<ProfileContextValue | null>(null);
@@ -73,18 +76,45 @@ function looksLikeName(text: string): boolean {
   return words.length >= 1 && words.length <= 3 && text.length <= 40 && !/[?,;:]/.test(text) && Boolean(slugFromName(text));
 }
 
-function requestedPageAction(text: string, profile: LearnerProfile | null): PageAction | null {
-  const lesson = text.match(/^(?:teach me(?:\s+about)?|learn)\s+(.+)$/i);
-  if (lesson) {
-    const topic = lesson[1].trim().replace(/[.!?]+$/, "").slice(0, 500);
-    if (topic) return { kind: "start_lesson", topic };
-  }
+function cleanActionSubject(text: string): string {
+  return text.trim().replace(/^[\s"'“”]+|[\s"'“”.!?]+$/g, "").slice(0, 500);
+}
 
-  const practice = text.match(
-    /^(?:practice|test me|give me (?:a )?rep)(?:\s+(?:on|about))?(?:\s+(.+))?$/i,
+function firstActionSubject(text: string, patterns: RegExp[]): string | null {
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    const subject = match?.[1] ? cleanActionSubject(match[1]) : "";
+    if (subject) return subject;
+  }
+  return null;
+}
+
+function isExplicitPreference(text: string): boolean {
+  return /\b(?:i prefer|my preference|i learn best|from now on|next time|slow down|speed up|too fast|too slow|too basic|too technical|simpler|plain language|more technical|less technical|more depth|less depth|more examples?|fewer examples?|real-world examples?|more concrete|more practical|more theoretical|start from (?:the )?principles|shorter|longer|more concise|more detailed|use more visuals?|use fewer visuals?|that was confusing|you lost me)\b/i.test(
+    text,
   );
-  if (practice) {
-    const statedFocus = practice[1]?.trim().replace(/[.!?]+$/, "");
+}
+
+function requestedPageAction(text: string, profile: LearnerProfile | null): PageAction | null {
+  const topic = firstActionSubject(text, [
+    /^(?:please\s+)?(?:(?:can|could|would|will) you\s+)?teach me(?:\s+about)?\s+(.+)$/i,
+    /^(?:please\s+)?(?:(?:can|could|would|will) you\s+)?explain(?:\s+to me)?\s+(.+)$/i,
+    /^(?:i\s+(?:want|wanna|need|would like|'d like)\s+to\s+learn|i(?:'m| am)\s+trying\s+to\s+learn|learn)(?:\s+about)?\s+(.+)$/i,
+    /^(?:(?:can|could|would) you\s+)?(?:(?:make|create|give|show)(?:\s+me)?\s+)?(?:a\s+)?(?:lesson|video)\s+(?:on|about|for)\s+(.+)$/i,
+    /^(?:i\s+(?:want|need|would like|'d like)\s+)(?:a\s+)?(?:lesson|video)\s+(?:on|about|for)\s+(.+)$/i,
+  ]);
+  if (topic) return { kind: "start_lesson", topic };
+
+  const statedFocus = firstActionSubject(text, [
+    /^(?:i\s+(?:want|need|would like|'d like)\s+to\s+)?practice(?:\s+(?:on|about|with))?\s+(.+)$/i,
+    /^(?:(?:can|could|would|will) you\s+)?(?:test|quiz|challenge)\s+me(?:\s+(?:on|about|with))?(?:\s+(.+))?$/i,
+    /^(?:(?:can|could|would|will) you\s+)?(?:give|make|set)(?:\s+me)?\s+(?:a\s+)?(?:rep|exercise|quiz|challenge|test)(?:\s+(?:on|about|for))?(?:\s+(.+))?$/i,
+    /^(?:test|quiz|challenge)\s+my\s+(?:knowledge|understanding)(?:\s+(?:of|on|about))?(?:\s+(.+))?$/i,
+  ]);
+  const asksForPractice = /^(?:i\s+(?:want|need|would like|'d like)\s+to\s+)?practice[.!?]*$/i.test(text)
+    || /^(?:(?:can|could|would|will) you\s+)?(?:test|quiz|challenge)\s+me[.!?]*$/i.test(text)
+    || /^(?:(?:can|could|would|will) you\s+)?(?:give|make|set)(?:\s+me)?\s+(?:a\s+)?(?:rep|exercise|quiz|challenge|test)[.!?]*$/i.test(text);
+  if (statedFocus || asksForPractice) {
     const profileFocus = profile?.onboarding.goal?.trim() || profile?.onboarding.interests?.[0]?.trim();
     return {
       kind: "start_practice",
@@ -95,6 +125,26 @@ function requestedPageAction(text: string, profile: LearnerProfile | null): Page
   return null;
 }
 
+function sideChatName(text: string): string | null {
+  const explicit = text.match(/^(?:i'?m|my name is|call me|it'?s)\s+(.+)$/i)?.[1];
+  const candidate = (explicit ?? text).replace(/[.!]+$/, "").trim();
+  const capitalizedBareName = /^(?:[A-Z][\p{L}'-]*)(?:\s+[A-Z][\p{L}'-]*){0,2}$/u.test(candidate);
+  return looksLikeName(candidate) && (Boolean(explicit) || capitalizedBareName) ? candidate : null;
+}
+
+function replyForCommand(command: CodexComponentCommand): string {
+  if (command.componentName === "AgentNote" && typeof command.props.text === "string") {
+    return command.props.text;
+  }
+  if (command.componentName === "StartLesson" && typeof command.props.topic === "string") {
+    return `Starting a lesson on “${command.props.topic}”.`;
+  }
+  if (command.componentName === "LevelQuiz") return "Opening a level check on the main page.";
+  if (command.componentName === "RecommendedTopics") return "Showing learning recommendations on the main page.";
+  if (command.componentName === "PromptComposer") return "Opening the lesson prompt on the main page.";
+  return "I’ve put the next step on the main page.";
+}
+
 export function ProfileProvider({ children }: React.PropsWithChildren) {
   const [profile, setProfileState] = useState<LearnerProfile | null>(null);
   const [booting, setBooting] = useState(() => Boolean(activeSlug()));
@@ -102,6 +152,7 @@ export function ProfileProvider({ children }: React.PropsWithChildren) {
   const [pageActions, setPageActions] = useState<PageAction[]>([]);
   const [library, setLibrary] = useState<LibraryEntry[]>(() => loadLibrary());
   const latestRef = useRef<LearnerProfile | null>(null);
+  const sideChatTurnRef = useRef(0);
   const latest = useCallback(() => latestRef.current, []);
   const pageAction = pageActions[0] ?? null;
   const enqueuePageAction = useCallback((action: PageAction) => {
@@ -219,7 +270,9 @@ export function ProfileProvider({ children }: React.PropsWithChildren) {
             ? `Starting a lesson on “${action.topic}”.`
             : action.kind === "start_practice"
               ? `Starting a practice rep for “${action.prompt}”.`
-              : action.summary;
+              : action.kind === "notice"
+                ? action.summary
+                : replyForCommand(action.command);
         if (current) {
           const at = new Date().toISOString();
           setChat((prev) => [...prev, { role: "learner", text, at }, { role: "agent", text: reply, at }]);
@@ -228,32 +281,50 @@ export function ProfileProvider({ children }: React.PropsWithChildren) {
         return reply;
       }
 
-      if (!current) {
+      if (isExplicitPreference(text)) {
+        if (!current) {
+          const summary = "Enter a name first, then I’ll remember that learning preference.";
+          enqueuePageAction({ kind: "notice", summary });
+          return summary;
+        }
+        const body = await postChat(current.slug, text);
+        setChat(body.turns);
+        if (body.profile) setProfile(body.profile);
+        enqueuePageAction({ kind: "notice", summary: body.reply });
+        return body.reply;
+      }
+
+      const requestedName = current ? null : sideChatName(text);
+      if (!current && requestedName) {
         // No profile yet: a short reply is taken as the learner's name,
         // otherwise ask for one. Anything longer is a preference we can't
         // store yet.
-        const name = text.replace(/^(?:i'?m|my name is|call me|it'?s)\s+/i, "").replace(/[.!]+$/, "");
-        if (looksLikeName(name)) {
-          const { created, profile: next } = await enter(name);
-          const reply = created
-            ? `Nice to meet you, ${next.name}. Tell me how you like to learn and I'll remember it.`
-            : `Welcome back, ${next.name}. Tell me how you like to learn and I'll remember it.`;
-          // `enter` activates the profile and therefore changes AgentChat from
-          // its temporary pre-profile transcript to this profile transcript.
-          // Keep the exchange here so it survives that source switch.
-          const at = new Date().toISOString();
-          setChat((prev) => [...prev, { role: "learner", text, at }, { role: "agent", text: reply, at }]);
-          enqueuePageAction({ kind: "notice", summary: reply });
-          return reply;
-        }
-        return "Enter a name first and I'll remember how you like to learn. What should I call you?";
+        const { created, profile: next } = await enter(requestedName);
+        const reply = created
+          ? `Nice to meet you, ${next.name}. Tell me how you like to learn and I'll remember it.`
+          : `Welcome back, ${next.name}. Tell me how you like to learn and I'll remember it.`;
+        // `enter` activates the profile and therefore changes AgentChat from
+        // its temporary pre-profile transcript to this profile transcript.
+        // Keep the exchange here so it survives that source switch.
+        const at = new Date().toISOString();
+        setChat((prev) => [...prev, { role: "learner", text, at }, { role: "agent", text: reply, at }]);
+        enqueuePageAction({ kind: "notice", summary: reply });
+        return reply;
       }
 
-      const body = await postChat(current.slug, text);
-      setChat(body.turns);
-      if (body.profile) setProfile(body.profile);
-      enqueuePageAction({ kind: "notice", summary: body.reply });
-      return body.reply;
+      const command = await requestNextBlock({
+        episodeId: "ep-local",
+        turnId: `side-chat-${(sideChatTurnRef.current += 1)}`,
+        state: describeMessage(text),
+        ...(current ? { slug: current.slug } : {}),
+      });
+      const reply = replyForCommand(command);
+      if (current) {
+        const at = new Date().toISOString();
+        setChat((prev) => [...prev, { role: "learner", text, at }, { role: "agent", text: reply, at }]);
+      }
+      enqueuePageAction({ kind: "render_block", command });
+      return reply;
     },
     [enter, enqueuePageAction, setProfile],
   );
