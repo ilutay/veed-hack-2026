@@ -19,7 +19,7 @@ This document supersedes:
 
 ## The direction in one paragraph
 
-A technical document, not an app. Ink on paper: near-black type on warm off-white, structure drawn with hairline rules and boxes rather than cards and shadows. Depth appears exactly once, as a **hard offset shadow with no blur** — a print-registration idiom, not a glow. Corners are square. There is **no colour at all**; emphasis comes from weight, rule thickness, and inversion — a black box with white text is the loudest thing the system can say. Two voices share the page: a **human voice** in bold grotesk and grey prose, and a **machine voice** in Syne Mono for anything the system generated, measured, or is waiting on. The reader should feel they are looking at an instrument's readout.
+A technical document, not an app. Ink on paper: near-black type on warm off-white, structure drawn with hairline rules and boxes rather than cards and shadows. The page is **flat** — no drop shadows, no offset shadows, no glow. Corners are square. There is **no colour at all**; emphasis comes from weight, rule thickness, and inversion — a black box with white text is the loudest thing the system can say. Two voices share the page: a **human voice** in bold grotesk and grey prose, and a **machine voice** in Syne Mono for anything the system generated, measured, or is waiting on. The reader should feel they are looking at an instrument's readout.
 
 ---
 
@@ -46,11 +46,6 @@ A technical document, not an app. Ink on paper: near-black type on warm off-whit
 
   --bw-hair: 1px;
   --bw-bold: 2px;
-
-  /* ---- The one shadow ---- */
-  --shadow-hard:   6px 6px 0 var(--ink);
-  --shadow-hard-sm: 3px 3px 0 var(--ink);
-  /* no blur, no spread, no alpha. There is no second shadow. */
 
   /* ---- Radii ---- */
   --r-none: 0;      /* the default for everything */
@@ -80,7 +75,7 @@ A technical document, not an app. Ink on paper: near-black type on warm off-whit
 }
 ```
 
-**Light only.** This is a paper-and-ink idiom: hard offset shadows and hairline rules are print moves that fall apart on a dark ground. Do not add a dark theme, and do not add `prefers-color-scheme` blocks. Set `body { background: var(--ground); color: var(--ink); }` explicitly.
+**Light only.** This is a paper-and-ink idiom: hairline rules on a warm ground. Do not add a dark theme, and do not add `prefers-color-scheme` blocks. Set `body { background: var(--ground); color: var(--ink); }` explicitly.
 
 **No colour.** There is no accent token, no hue, no semantic palette. If a state needs to stand out it inverts (`--ink-fill` + `--on-ink`) or thickens its rule to `--bw-bold`. A request for "just one accent colour" is a change to this document, not a local decision.
 
@@ -153,9 +148,9 @@ Everything in §4 is assembled from these. Learn them once.
 
 **2. The inversion.** `background: var(--ink-fill); color: var(--on-ink)`. The system's only emphasis. Used for: the active tab, the step numeral, the primary button, the selected chip. Never more than **two inversions visible at once** — a third makes the page look broken rather than emphatic.
 
-**3. The offset.** `border: var(--bw-bold) solid var(--ink); box-shadow: var(--shadow-hard)`. Reserved for surfaces that are *currently live*: the focused work card, the active decision panel. **At most one `--shadow-hard` per column.** It is a spotlight; two spotlights light nothing.
+**3. The bold rule.** `border: var(--bw-bold) solid var(--ink)`. Reserved for surfaces that are *currently live*: the focused work card, the active decision panel, the primary button. No shadow. Flat on the page.
 
-Depth ranking, low to high: plain box → box with `--line-strong` → box with `--ink` border → box with `--ink` border + offset shadow.
+Depth ranking, low to high: plain box → box with `--line-strong` → box with `--ink` border.
 
 ---
 
@@ -190,7 +185,7 @@ State must not rest on border colour alone — the numeral treatment changes too
 
 | Class | Recipe |
 |---|---|
-| `.panel` | Box, `padding: var(--sp-4)`. The **live** panel takes move 3 (`--bw-bold` `--ink` + `--shadow-hard`); the rest stay plain. |
+| `.panel` | Box, `padding: var(--sp-4)`. The **live** panel takes move 3 (`--bw-bold` `--ink` border); the rest stay plain. |
 | `.panel-eyebrow` | `.eyebrow` type, `--ink-muted`, `margin-bottom: var(--sp-3)` |
 | `.panel-title` | Inter 600, `1.0625rem`, `--ink` |
 | `.tabs` | `display: flex; gap: var(--sp-2)` |
@@ -224,10 +219,10 @@ Interaction, defined once and reused:
 
 - **Rest** → as specified per component
 - **Hover** → `border-color: var(--ink)`. Nothing moves, nothing fades.
-- **Active/press** → `translate(2px, 2px)` **only on elements carrying `--shadow-hard*`**, with the shadow shortening to match — the element presses into its own shadow. Elements without the offset shadow do not move.
+- **Active/press** → no movement. Fill and rule may change; the element stays put.
 - **Focus-visible** → `outline: var(--bw-bold) solid var(--ink); outline-offset: 2px`. No exceptions.
 - **Disabled** → `opacity: 0.4; cursor: not-allowed`, no hover response.
-- **Transition** → `--dur-base --ease` on `border-color, background-color, color, box-shadow, translate`. Nothing else animates.
+- **Transition** → `--dur-base --ease` on `border-color, background-color, color`. Nothing else animates.
 
 ### Shell & chrome
 
@@ -248,7 +243,7 @@ Interaction, defined once and reused:
 
 | Class | Recipe |
 |---|---|
-| `.stage` | `aspect-ratio: 16/9; background: var(--fill); border: var(--bw-hair) solid var(--line-strong); border-radius: var(--r-none); overflow: hidden; position: relative`. Flat — the stage is a plate on the page, not a floating card. No offset shadow. |
+| `.stage` | `aspect-ratio: 16/9; background: var(--fill); border: var(--bw-hair) solid var(--line-strong); border-radius: var(--r-none); overflow: hidden; position: relative`. Flat — the stage is a plate on the page, not a floating card. |
 | `.stage img, .stage video` | `width: 100%; height: 100%; object-fit: cover; display: block` |
 | `.caption` | Solid plate, **no blur**. `position: absolute; inset-inline: 0; bottom: 0; background: var(--ink-fill); color: var(--on-ink); padding: var(--sp-3) var(--sp-4)`. Full-bleed inversion across the stage bottom — legible over any image without translucency. |
 | `.caption .slide-title` | Inter 600, `0.9375rem`, `--on-ink`, `margin: 0 0 var(--sp-1)` |
@@ -261,14 +256,14 @@ Interaction, defined once and reused:
 |---|---|
 | `.controls` | `display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap` |
 | `.btn` | Inter 600, `0.875rem`; `padding: var(--sp-2) var(--sp-4); background: var(--surface); color: var(--ink); border: var(--bw-hair) solid var(--line-strong); border-radius: var(--r-sm)`. Hover: `border-color: var(--ink)`. Flat — no shadow. |
-| `.btn-primary` | Inverted, plus the offset: `background: var(--ink-fill); color: var(--on-ink); border: var(--bw-bold) solid var(--ink); box-shadow: var(--shadow-hard-sm)`. Press: `translate(2px,2px)` and shadow → `1px 1px 0`. The one button that moves. |
+| `.btn-primary` | Inverted and flat: `background: var(--ink-fill); color: var(--on-ink); border: var(--bw-bold) solid var(--ink)`. No shadow. Does not move on press. |
 | `.counter` | Syne Mono, `0.75rem`, `tabular-nums`, `--ink-muted` |
 | `.track` | `height: 6px; background: var(--surface); border: var(--bw-hair) solid var(--line-strong); border-radius: var(--r-none); position: relative; cursor: pointer` |
 | `.track .fill` | `position: absolute; inset: 0; background: var(--ink)` |
 | `.track .ticks` | `position: absolute; inset: 0; pointer-events: none` |
 | `.track .tick` | `width: 1px; background: var(--line-strong)` |
 | `.track:hover` | `border-color: var(--ink)`. Height never changes. |
-| `.composer` | Box, `padding: var(--sp-6)`, `display: flex; flex-direction: column; gap: var(--sp-4)`. The active work card: `--bw-bold` `--ink` border + `--shadow-hard`. |
+| `.composer` | Box, `padding: var(--sp-6)`, `display: flex; flex-direction: column; gap: var(--sp-4)`. The active work card: `--bw-bold` `--ink` border. Flat — no shadow. |
 | `.composer-row` | `display: flex; gap: var(--sp-3); flex-wrap: wrap`; input `flex: 1 1 280px` |
 | `.composer input[type="text"]` | Inter `0.9375rem`; `background: var(--fill); border: var(--bw-bold) solid var(--ink); border-radius: var(--r-sm); padding: var(--sp-3) var(--sp-4); color: var(--ink)`. The heavy border marks the one field that matters. |
 | `…::placeholder` | `color: var(--ink-faint)` |
@@ -305,12 +300,12 @@ Interaction, defined once and reused:
 
 | Class | Recipe |
 |---|---|
-| `.agent-bubble` | Fixed. `bottom: var(--sp-6); right: var(--sp-6); border-radius: var(--r-none); padding: var(--sp-2) var(--sp-4)`; inverted + `--shadow-hard-sm`. Press: `translate(2px,2px)`. |
-| `.agent-bubble--open` | Reverts to `.btn` (surface + `--ink` border), keeps the shadow. |
+| `.agent-bubble` | Fixed. `bottom: var(--sp-6); right: var(--sp-6); border-radius: var(--r-none); padding: var(--sp-2) var(--sp-4)`; inverted. Flat — no shadow, no press translation. |
+| `.agent-bubble--open` | Reverts to `.btn` (surface + `--ink` border). |
 | `.agent-bubble__dot` | `6px` **square**, `background: var(--on-ink)`. Currently hardcoded `#22c55e` — a rule 1 violation; there is no green in this system. |
 | `.agent-bubble__label` | `.meta` |
 | `.agent-bubble__badge` | `.micro`, `opacity: 0.6` |
-| `.agent-panel` | `bottom: calc(var(--sp-6) + var(--sp-8)); right: var(--sp-6); width: min(420px, calc(100vw - var(--sp-4) * 2)); max-height: min(580px, 80vh); background: var(--surface); border: var(--bw-bold) solid var(--ink); box-shadow: var(--shadow-hard); display: flex; flex-direction: column; overflow: hidden` |
+| `.agent-panel` | `bottom: calc(var(--sp-6) + var(--sp-8)); right: var(--sp-6); width: min(420px, calc(100vw - var(--sp-4) * 2)); max-height: min(580px, 80vh); background: var(--surface); border: var(--bw-bold) solid var(--ink); display: flex; flex-direction: column; overflow: hidden` |
 | `.agent-panel__header` | `padding: var(--sp-3) var(--sp-4); border-bottom: var(--bw-hair) solid var(--line); background: var(--fill); display: flex; justify-content: space-between; align-items: center` |
 | `.agent-panel__title-group` | `display: flex; align-items: center; gap: var(--sp-2)` |
 | `.agent-panel__title` | `.eyebrow` — a label, not an h2 in the scale, despite the tag |
@@ -336,13 +331,13 @@ Typing indicator reuses `.dim`. No shimmer, no animated ellipsis.
 1. **No colour.** No hex outside the `:root` block, and every value in it is a neutral. No accent, no semantic hues, no gradients anywhere.
 2. **No raw px in component CSS.** Tokens only.
 3. **Square by default.** `--r-sm` for fields and buttons; `--r-pill` only for the status chip and step numerals.
-4. **One shadow, and it has no blur.** At most one `--shadow-hard` per column. `rgba` shadows and `filter: blur()` do not exist here.
+4. **No shadows.** No `box-shadow`, no `--shadow-*` tokens, no `filter: blur()`. Depth is rule weight and inversion only.
 5. **`--line` never carries meaning.** Interactive boundaries and state changes use `--line-strong` or `--ink` (1.45:1 vs 3.40:1).
 6. **Never set `font-weight` on Syne Mono.** One weight ships; emphasis is case, tracking, inversion.
 7. **The voices don't mix.** Human-authored text is Inter; system-emitted text is Syne Mono. Not by size — by author.
 8. **Max two inversions visible at once.**
 9. **State is never colour-only or border-only.** It changes at least two of: fill, rule weight, numeral/icon treatment, ARIA.
-10. **Only elements with `--shadow-hard*` move,** and only on press, into their own shadow.
+10. **Nothing moves on press.** Hover and active change fill and rule; they do not translate.
 11. **Every interactive element has a `:focus-visible` ring** — 2px `--ink`, 2px offset.
 12. **One looping animation exists** (`.app-brand-dot` while pending). No spinners, no skeletons — progress is text in `.receipt` and `.track`.
 13. **Dotted rules mean readout rows** (`.kv`); **dashed rules mean absent** (`.missing`, `.flow` top edge). Neither is decorative.
@@ -357,7 +352,7 @@ Typing indicator reuses `.dim`. No shimmer, no animated ellipsis.
 | `src/styles/riso.css` "MINIMAL MONOCHROME" `:root` (zinc palette, `--radius-sm: 4px`, soft shadows) | Replace with §1. The zinc greys are cool; this system is warm. |
 | Dark-mode blocks (~30 duplicated lines + a malformed comma-selector with a nested media query) | **Delete outright.** Light only — no `prefers-color-scheme` in this system. |
 | "Compatibility Fallbacks" aliases: `--paper`, `--body`, `--ink-1`, `--ink-2`, `--knockout`, `--on-ink` | Delete. Note `--on-ink` is *reused* in §1 with a new meaning (white text on a black fill) — redefine it, don't alias it. |
-| Soft shadows `0 4px 20px -2px rgba(0,0,0,.04)` etc. | → `--shadow-hard` / none. Rule 4. |
+| Soft shadows `0 4px 20px -2px rgba(0,0,0,.04)` etc. | **Delete.** Rule 4 — the page is flat. |
 | Radii `2/4/6/9999px` | → `--r-none` / `--r-sm` / `--r-pill`. Most elements become square. |
 | ~14 `font-variation-settings: "wght" …` | Delete. Rule 6. |
 | `.misreg` — inert, applied at 7 sites | Delete the rule; strip the class from `LessonPlayer.tsx` (×3), `NextChoices.tsx` (×3), `TasteFeedback.tsx` (×1), `WidthFollowTitle.tsx` (×1). |
@@ -420,8 +415,8 @@ grep -rhoE 'className="[^"]*"' src/*.tsx src/components/*.tsx \
 # dead vocabulary gone (expect no hits)
 grep -rn "font-variation-settings\|misreg\|--paper\|--ink-1\|--knockout\|Space Grotesk\|Space Mono\|width-follow\|#22c55e\|backdrop-filter\|prefers-color-scheme" src/ index.html
 
-# no colour, no blurred shadows, no raw hex outside :root (rules 1 & 4)
-grep -n "#[0-9A-Fa-f]\{3,6\}\|rgba(\|blur(" src/styles/riso.css
+# no colour, no shadows, no raw hex outside :root (rules 1 & 4)
+grep -n "#[0-9A-Fa-f]\{3,6\}\|rgba(\|blur(\|box-shadow" src/styles/riso.css
 ```
 
 Check in the browser via **http://localhost:3000/demo** — it replays `codex/examples/fixture-run/` with **no fal or VEED API spend**. Do not exercise `/`; it costs credits.
@@ -429,7 +424,7 @@ Check in the browser via **http://localhost:3000/demo** — it replays `codex/ex
 By eye:
 - The stage holds 16:9 at 360px and 1440px.
 - Keyboard tab-through shows a visible 2px ring on every control.
-- At most one `--shadow-hard` per column, and at most two inversions on screen.
+- At most two inversions on screen. No box-shadow on any control or panel.
 - Every state readable in greyscale *and* distinguishable without relying on border colour alone (rule 9) — the system is already greyscale, so this reduces to: does each state change at least two properties?
 - `prefers-reduced-motion: reduce` stops `.snap` and the brand-dot blink.
 - The copilot panel opens, scrolls, and does not overlap the stage at narrow widths.

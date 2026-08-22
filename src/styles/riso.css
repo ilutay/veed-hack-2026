@@ -19,10 +19,6 @@
   --bw-hair: 1px;
   --bw-bold: 2px;
 
-  /* ---- The one shadow ---- */
-  --shadow-hard: 6px 6px 0 var(--ink);
-  --shadow-hard-sm: 3px 3px 0 var(--ink);
-
   /* ---- Radii ---- */
   --r-none: 0;
   --r-sm: 2px;
@@ -352,9 +348,7 @@ h3 {
   transition:
     border-color var(--dur-base) var(--ease),
     background-color var(--dur-base) var(--ease),
-    color var(--dur-base) var(--ease),
-    box-shadow var(--dur-base) var(--ease),
-    transform var(--dur-base) var(--ease);
+    color var(--dur-base) var(--ease);
 }
 
 .btn:hover:not([disabled]) {
@@ -365,16 +359,10 @@ h3 {
   background: var(--ink-fill);
   color: var(--on-ink);
   border: var(--bw-bold) solid var(--ink);
-  box-shadow: var(--shadow-hard-sm);
 }
 
 .btn-primary:hover:not([disabled]) {
   border-color: var(--ink);
-}
-
-.btn-primary:active:not([disabled]) {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 var(--ink);
 }
 
 .btn[disabled] {
@@ -429,7 +417,6 @@ h3 {
 .quiz {
   background: var(--surface);
   border: var(--bw-bold) solid var(--ink);
-  box-shadow: var(--shadow-hard);
   padding: var(--sp-6);
   display: flex;
   flex-direction: column;
@@ -508,7 +495,6 @@ h3 {
     border-color var(--dur-base) var(--ease),
     background-color var(--dur-base) var(--ease),
     color var(--dur-base) var(--ease),
-    box-shadow var(--dur-base) var(--ease),
     padding var(--dur-base) var(--ease);
 }
 
@@ -565,13 +551,6 @@ h3 {
   background: var(--ink-fill);
   color: var(--on-ink);
   border: var(--bw-bold) solid var(--ink);
-  box-shadow: none;
-}
-
-.taste-chip.btn-primary:active:not([disabled]),
-.taste-chip[aria-pressed="true"]:active:not([disabled]) {
-  transform: none;
-  box-shadow: none;
 }
 
 .sources {
@@ -936,7 +915,6 @@ h3 {
     max-height: calc(100vh - var(--sp-6));
     height: calc(100vh - var(--sp-6));
     border: var(--bw-bold) solid var(--ink);
-    box-shadow: var(--shadow-hard);
     border-top: var(--bw-bold) solid var(--ink);
   }
 
@@ -966,9 +944,5 @@ h3 {
   .app-brand-dot,
   .app-shell:has(.receipt) .app-brand-dot {
     animation: none;
-  }
-
-  .btn-primary:active:not([disabled]) {
-    transform: none;
   }
 }
