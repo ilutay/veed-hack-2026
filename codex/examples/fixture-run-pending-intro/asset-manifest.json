@@ -1,0 +1,93 @@
+{
+  "run_id": "fixture-dotcom-pending-intro",
+  "lesson_script": "lesson-script.json",
+  "assets": {
+    "talking_head_intro": {
+      "path": "02-content-generation/talking-head-intro.mp4",
+      "media_type": "video/mp4",
+      "provider": "pending"
+    },
+    "slide_images": [
+      {
+        "slide_id": "slide-01",
+        "path": "../fixture-run/02-content-generation/slide-images/slide-01.png",
+        "media_type": "image/png",
+        "provider": "fixture-placeholder",
+        "prompt": "Late-1990s stock market screen with tech stocks surging."
+      },
+      {
+        "slide_id": "slide-02",
+        "path": "../fixture-run/02-content-generation/slide-images/slide-02.png",
+        "media_type": "image/png",
+        "provider": "fixture-placeholder",
+        "prompt": "Collage of early internet companies, websites, and startup offices."
+      },
+      {
+        "slide_id": "slide-03",
+        "path": "../fixture-run/02-content-generation/slide-images/slide-03.png",
+        "media_type": "image/png",
+        "provider": "fixture-placeholder",
+        "prompt": "Rising stock market graph alongside excited investors."
+      },
+      {
+        "slide_id": "slide-04",
+        "path": "../fixture-run/02-content-generation/slide-images/slide-04.png",
+        "media_type": "image/png",
+        "provider": "fixture-placeholder",
+        "prompt": "Market chart suddenly turning sharply downward."
+      },
+      {
+        "slide_id": "slide-05",
+        "path": "../fixture-run/02-content-generation/slide-images/slide-05.png",
+        "media_type": "image/png",
+        "provider": "fixture-placeholder",
+        "prompt": "Empty startup office with discarded computers."
+      },
+      {
+        "slide_id": "slide-06",
+        "path": "../fixture-run/02-content-generation/slide-images/slide-06.png",
+        "media_type": "image/png",
+        "provider": "fixture-placeholder",
+        "prompt": "Modern tech company office transitioning from a 1990s computer."
+      }
+    ],
+    "voiceover": {
+      "path": "../fixture-run/02-content-generation/voiceover.mp3",
+      "media_type": "audio/mpeg",
+      "provider": "fixture-placeholder",
+      "prompt": "PLACEHOLDER - blip at each slide boundary so timing drift is audible"
+    }
+  },
+  "timings": [
+    {
+      "slide_id": "slide-01",
+      "start_seconds": 0.0,
+      "end_seconds": 2.0
+    },
+    {
+      "slide_id": "slide-02",
+      "start_seconds": 2.0,
+      "end_seconds": 5.0
+    },
+    {
+      "slide_id": "slide-03",
+      "start_seconds": 5.0,
+      "end_seconds": 8.0
+    },
+    {
+      "slide_id": "slide-04",
+      "start_seconds": 8.0,
+      "end_seconds": 11.0
+    },
+    {
+      "slide_id": "slide-05",
+      "start_seconds": 11.0,
+      "end_seconds": 13.0
+    },
+    {
+      "slide_id": "slide-06",
+      "start_seconds": 13.0,
+      "end_seconds": 15.0
+    }
+  ]
+}

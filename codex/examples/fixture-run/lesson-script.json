@@ -1,0 +1,128 @@
+{
+  "topic": "The dot-com bubble",
+  "title": "The Dot-Com Bubble in 15 Seconds",
+  "learning_objective": "The late-1990s internet boom inflated on investment far ahead of profit, and when it burst the speculation died but the technology did not.",
+  "audience": "general learners",
+  "duration_seconds": 15,
+  "style_notes": [
+    "FIXTURE: derived from codex/examples/dotcom-bubble.lesson-script.example.json for page development. Narration is that example's, with slide-03 corrected against the research brief.",
+    "slide-03 said 'almost 400%'. The sourced figure is 600% (fact-02).",
+    "Archival late-1990s tech aesthetic shifting to modern in the final slide.",
+    "No dense text or tiny labels in generated images; the education lives in the voiceover.",
+    "This fixture includes an `intro` so the page's intro section can be built and tested. The standard 15-second format omits it - see the no-intro page state."
+  ],
+  "intro": {
+    "hook": "Everyone remembers the crash. Almost nobody remembers what it repriced.",
+    "talking_head_script": "Everyone remembers the dot-com crash. Almost nobody remembers what it actually repriced. Fifteen seconds.",
+    "duration_seconds": 5
+  },
+  "slides": [
+    {
+      "id": "slide-01",
+      "title": "One of the biggest tech booms",
+      "key_points": [
+        "late 1990s",
+        "tech boom"
+      ],
+      "narration": "The dot-com bubble was one of the biggest tech booms in history.",
+      "visual_brief": "Late-1990s stock market screen with tech stocks surging.",
+      "duration_seconds": 2,
+      "source_ids": [
+        "src-wikipedia-dotcom"
+      ]
+    },
+    {
+      "id": "slide-02",
+      "title": "Money before profits",
+      "key_points": [
+        "speculative investment",
+        "no viable business"
+      ],
+      "narration": "Investors poured money into internet startups, often before they had profits, or even a viable business.",
+      "visual_brief": "Collage of early internet companies, websites, and startup offices.",
+      "duration_seconds": 3,
+      "source_ids": [
+        "src-wikipedia-dotcom"
+      ]
+    },
+    {
+      "id": "slide-03",
+      "title": "The Nasdaq climbs sixfold",
+      "key_points": [
+        "1995 to 2000",
+        "up 600%"
+      ],
+      "narration": "From 1995 to 2000, the Nasdaq rose six hundred percent.",
+      "visual_brief": "Rising stock market graph alongside excited investors.",
+      "duration_seconds": 3,
+      "source_ids": [
+        "src-wikipedia-dotcom"
+      ]
+    },
+    {
+      "id": "slide-04",
+      "title": "Reality catches up",
+      "key_points": [
+        "March 2000",
+        "bubble bursts"
+      ],
+      "narration": "Then reality caught up. In 2000, the bubble burst, and tech stocks collapsed.",
+      "visual_brief": "Market chart suddenly turning sharply downward.",
+      "duration_seconds": 3,
+      "source_ids": [
+        "src-wikipedia-dotcom"
+      ]
+    },
+    {
+      "id": "slide-05",
+      "title": "Trillions wiped out",
+      "key_points": [
+        "companies disappeared",
+        "$5 trillion lost"
+      ],
+      "narration": "Thousands of companies disappeared, and five trillion dollars in market value were wiped out.",
+      "visual_brief": "Empty startup office with discarded computers.",
+      "duration_seconds": 2,
+      "source_ids": [
+        "src-wikipedia-dotcom"
+      ]
+    },
+    {
+      "id": "slide-06",
+      "title": "What survived",
+      "key_points": [
+        "the internet endured",
+        "Amazon"
+      ],
+      "narration": "But the internet survived, and companies like Amazon emerged stronger.",
+      "visual_brief": "Modern tech company office transitioning from a 1990s computer.",
+      "duration_seconds": 2,
+      "source_ids": [
+        "src-wikipedia-dotcom"
+      ]
+    }
+  ],
+  "next_video": [
+    {
+      "label": "A",
+      "direction": "What actually popped the bubble in March 2000"
+    },
+    {
+      "label": "B",
+      "direction": "Speculative bubbles before the internet"
+    },
+    {
+      "label": "C",
+      "direction": "Which dot-com era companies survived, and why"
+    }
+  ],
+  "sources": [
+    {
+      "id": "src-wikipedia-dotcom",
+      "title": "Dot-com bubble",
+      "url": "https://en.wikipedia.org/wiki/Dot-com_bubble",
+      "publisher": "Wikipedia",
+      "accessed_at": "2026-08-22"
+    }
+  ]
+}
