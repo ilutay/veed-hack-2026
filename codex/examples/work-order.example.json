@@ -3,7 +3,7 @@
   "learner_profile": {
     "audience": "curious software engineers",
     "level": "intermediate",
-    "target_duration_seconds": 300,
+    "target_duration_seconds": 15,
     "tone": "clear, concrete, visually explanatory"
   },
   "run_mode": "dry-run",
