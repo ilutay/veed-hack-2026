@@ -1,0 +1,44 @@
+{
+  "endpoint": "xai/tts/v1",
+  "language": "en",
+  "payload": {
+    "language": "en",
+    "text": "The dot-com bubble was one of the biggest tech booms in history.\n[pause]\nInvestors poured money into internet startups, often before they had profits, or even a viable business.\n[pause]\nFrom 1995 to 2000, the Nasdaq rose almost 400%.\n[pause]\nThen reality caught up. In 2000, the bubble burst, and tech stocks collapsed.\n[pause]\nThousands of companies disappeared, and trillions of dollars in market value were wiped out.\n[pause]\nBut the internet survived, and companies like Amazon emerged stronger.",
+    "voice": "ara"
+  },
+  "run_id": "run3",
+  "segments": [
+    {
+      "slide_id": "slide-01",
+      "target_duration_seconds": 2,
+      "text": "The dot-com bubble was one of the biggest tech booms in history."
+    },
+    {
+      "slide_id": "slide-02",
+      "target_duration_seconds": 3,
+      "text": "Investors poured money into internet startups, often before they had profits, or even a viable business."
+    },
+    {
+      "slide_id": "slide-03",
+      "target_duration_seconds": 3,
+      "text": "From 1995 to 2000, the Nasdaq rose almost 400%."
+    },
+    {
+      "slide_id": "slide-04",
+      "target_duration_seconds": 3,
+      "text": "Then reality caught up. In 2000, the bubble burst, and tech stocks collapsed."
+    },
+    {
+      "slide_id": "slide-05",
+      "target_duration_seconds": 2,
+      "text": "Thousands of companies disappeared, and trillions of dollars in market value were wiped out."
+    },
+    {
+      "slide_id": "slide-06",
+      "target_duration_seconds": 2,
+      "text": "But the internet survived, and companies like Amazon emerged stronger."
+    }
+  ],
+  "target_duration_seconds": 15,
+  "voice": "ara"
+}
