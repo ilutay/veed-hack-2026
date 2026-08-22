@@ -8,8 +8,8 @@ import type { CodexAction } from "./types";
 
 export const TEAMBOX_CODEX_PROXY_BINARY = "/usr/local/bin/codex" as const;
 export const TEAMBOX_CODEX_PROTOCOL_VERSION = "0.149.0" as const;
-export const TEAMBOX_CODEX_MODEL = "gpt-5.6-luna" as const;
-export const TEAMBOX_CODEX_REASONING_EFFORT = "low" as const;
+export const TEAMBOX_CODEX_MODEL = "gpt-5.6-sol" as const;
+export const TEAMBOX_CODEX_REASONING_EFFORT = "medium" as const;
 export const TEAMBOX_CODEX_SERVICE_TIER = "fast" as const;
 const TEAMBOX_CODEX_SERVICE_TIER_RECEIPTS = ["fast", "priority"] as const;
 export const TEAMBOX_CODEX_APP_SERVER_SOCKET =

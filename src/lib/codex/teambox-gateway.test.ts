@@ -256,8 +256,8 @@ describe("TeamBox app-server policy", () => {
       approvalPolicy: "never",
       sandboxPolicy: { type: "readOnly", networkAccess: false },
     });
-    expect(TEAMBOX_CODEX_MODEL).toBe("gpt-5.6-luna");
-    expect(TEAMBOX_CODEX_REASONING_EFFORT).toBe("low");
+    expect(TEAMBOX_CODEX_MODEL).toBe("gpt-5.6-sol");
+    expect(TEAMBOX_CODEX_REASONING_EFFORT).toBe("medium");
     expect(TEAMBOX_CODEX_SERVICE_TIER).toBe("fast");
   });
 

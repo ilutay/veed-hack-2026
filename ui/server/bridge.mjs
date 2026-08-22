@@ -37,8 +37,8 @@ const RUN_AS = process.env.CODEX_USER ?? "codex-runner";
 const CODEX_HOME = process.env.CODEX_HOME ?? "/var/lib/codex-runner";
 const CODEX_EXEC_ARGV = Object.freeze([
   "codex", "exec",
-  "--model", "gpt-5.6-luna",
-  "--config", 'model_reasoning_effort="low"',
+  "--model", "gpt-5.6-sol",
+  "--config", 'model_reasoning_effort="medium"',
   "--config", 'service_tier="fast"',
 ]);
 const SCHEMA = resolve(import.meta.dirname, "component-command.schema.json");
