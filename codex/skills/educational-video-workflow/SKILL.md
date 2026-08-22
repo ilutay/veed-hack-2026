@@ -11,10 +11,19 @@ Use this skill when the user wants to generate or iterate on the full educationa
 
 1. Read the work order or collect the topic, learner profile, run mode, and output directory.
 2. Use the research-script stage to produce `lesson-script.json`.
-3. Run the content generation branches in parallel when possible:
-   - talking-head intro through the Veed stage
-   - one image per slide through the slide-image stage
-   - voiceover video or timed narration through the voiceover stage
+3. Run the content generation branches concurrently, not sequentially — each
+   stage's wall-clock time (slide images, voiceover, and the ~1-2 minute VEED
+   Fabric MCP render) is comparable, and running them one after another
+   roughly triples total run time for no benefit, since none of the three
+   depends on another's output:
+   - `codex/tools/fal_media_agent.py` (slide images, voiceover, and the fal
+     intro-audio clip) — launch as a background process; it is a single
+     script invocation covering all three fal-backed assets.
+   - the talking-head intro video through the `veed-talking-head` skill — an
+     agent-driven MCP tool sequence, kicked off in the same turn as the fal
+     script rather than after it returns. See `references/workflow-contract.md`
+     for the concurrency requirement.
+   Only block on both finishing once you reach step 4.
 4. Assemble the final webpage from validated contracts and media assets.
 5. Run integration QA and report skipped live calls, placeholders, and contract failures.
 

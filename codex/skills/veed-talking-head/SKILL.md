@@ -10,6 +10,12 @@ Use this skill for the short presenter intro generated from
 15-second lesson format normally omits it — skip this skill entirely when
 `lesson-script.json` has no `intro` field.
 
+Start this skill's MCP tool sequence in parallel with the
+`fal_media_agent.py` content-generation run (slide images + voiceover), not
+after it finishes — the VEED render alone takes 1-2 minutes, and neither
+stage depends on the other's output. See "Content Generation Concurrency" in
+`../educational-video-workflow/references/workflow-contract.md`.
+
 The stage has two parts, run through two different providers:
 
 1. **Intro audio (fal)** — already produced for you by
