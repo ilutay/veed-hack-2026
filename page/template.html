@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson</title>
+<link rel="stylesheet" href="riso.css" id="css">
+<style>
+  header { margin-bottom: 26px; }
+  .objective { font-size: 1.05rem; opacity: .85; }
+  section { margin: 34px 0; }
+  .timing-note { font-size: .8rem; opacity: .7; margin: 8px 0 0; max-width: 60ch; }
+  .dim { opacity: .65; }
+  .missing strong { display:block; margin-bottom:6px; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85em; }
+  .devbar { display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+            padding:10px clamp(16px,4vw,40px); border-bottom:3px solid var(--body); }
+  .devbar .btn { padding:6px 10px; font-size:.72rem; }
+</style>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+<div id="devbar" class="devbar" hidden></div>
+<main id="lesson"></main>
+
+<script type="module">
+import { mountFrom } from "./player.js";
+
+const params = new URLSearchParams(location.search);
+// The assembled page pins its own run via <body data-run="...">; ?run= is for
+// local development only. NOTE the two are different paths: the dev default points
+// at codex/examples/ (tracked fixtures), whereas an assembled index.html sits in
+// <run>/03-webpage/ and must set data-run="../" to reach 02-content-generation/.
+// The real pipeline writes runs to artifacts/educational-video/{run_id}/, which is
+// gitignored — which is why the fixtures live under codex/examples/ instead.
+const run = params.get("run") || document.body.dataset.run || "../codex/examples/fixture-run/";
+
+if (params.has("dev")) {
+  // never let a cached stylesheet mask an edit during development
+  const css = document.getElementById("css");
+  css.href = "riso.css?v=" + Date.now();
+  const bar = document.getElementById("devbar");
+  bar.hidden = false;
+  const runs = [
+    ["happy path", "../codex/examples/fixture-run/"],
+    ["pending intro", "../codex/examples/fixture-run-pending-intro/"],
+  ];
+  bar.innerHTML =
+    runs.map(([n, r]) =>
+      `<a class="btn" href="?dev&run=${encodeURIComponent(r)}"${r === run ? ' style="background:var(--ink-1);color:var(--paper)"' : ""}>${n}</a>`
+    ).join("") +
+    `<a class="btn" href="?dev&run=${encodeURIComponent(run)}&theme=light">light</a>
+     <a class="btn" href="?dev&run=${encodeURIComponent(run)}&theme=dark">dark</a>`;
+}
+if (params.get("theme")) document.documentElement.dataset.theme = params.get("theme");
+
+mountFrom(document.getElementById("lesson"), run, {
+  onChoose: (c) => console.log("[lesson] chose", c),
+  onEnded: () => console.log("[lesson] ended"),
+}).catch((e) => {
+  document.getElementById("lesson").innerHTML =
+    `<div class="wrap"><h1 class="display misreg">Could not load run</h1>
+     <p><code>${e.message}</code></p>
+     <p class="dim">A lesson page must be served over HTTP — <code>fetch</code> is blocked on <code>file://</code>.
+     Try <code>python3 -m http.server</code> from the repo root.</p></div>`;
+  console.error(e);
+});
+</script>
+</body>
+</html>
