@@ -18,6 +18,10 @@ Use this skill to create the image assets for each slide in `lesson-script.json`
 - Emit provider metadata and prompts even in dry-run mode.
 - In `test` or `live`, run through `scripts/with-env.sh` and let the tool call
   `scripts/check-env.sh fal` before the first request.
+- Set `WORKFLOW_MODE=live` as well as `--mode live`; the preflight does not see
+  the flag on its own.
+- Pass `--poll-interval-seconds 0.5`. The default of 2 dominates runtime.
+- Pass canonical `lesson-script.json`, never a Markdown rendering.
 
 ## Output
 
@@ -28,3 +32,6 @@ Use this skill to create the image assets for each slide in `lesson-script.json`
 Read `references/art-direction.md` when creating or revising the visual style.
 Read `../educational-video-workflow/references/fal-media-contract.md` before
 changing fal model ids, payload fields, or artifact paths.
+
+Read `../educational-video-workflow/references/fal-run-playbook.md` before
+running a live generation or delegating one to a subagent.
