@@ -325,6 +325,7 @@ export async function requestPioneerCurriculum(context) {
       "Use only supplied text. Do not use tools, retrieval, URLs, media, or visual claims.",
       "Echo requestId, requestProjectionSha256, modelVersion, and every evidenceId exactly.",
       "Return exact keys: requestId, bindingEcho, selectedMoveId, focus, reason, evidenceIds, confidence, modelVersion.",
+      "Set confidence to exactly one of: low, medium, high.",
     ],
     expectedModelVersion: model,
     request: { ...projection, requestProjectionSha256 },
@@ -341,8 +342,9 @@ export async function requestPioneerCurriculum(context) {
       headers: { "content-type": "application/json", "x-api-key": apiKey },
       body: JSON.stringify({
         model,
+        reasoning: { enabled: false },
         temperature: 0,
-        max_tokens: 256,
+        max_tokens: 768,
         n: 1,
         store: true,
         stream: false,
@@ -357,9 +359,10 @@ export async function requestPioneerCurriculum(context) {
       throw new Error("Pioneer returned an ambiguous completion");
     }
     const content = envelope.choices[0]?.message?.content;
-    if (typeof content !== "string" || !content || content.length > 8_192 || UNSAFE_TEXT.test(content)) {
-      throw new Error("Pioneer returned invalid curriculum text");
-    }
+    if (typeof content !== "string") throw new Error("Pioneer returned non-text curriculum content");
+    if (!content) throw new Error("Pioneer returned empty curriculum text");
+    if (content.length > 8_192) throw new Error("Pioneer curriculum text exceeded its character limit");
+    if (UNSAFE_TEXT.test(content)) throw new Error("Pioneer curriculum text contained forbidden markup or links");
     const decision = JSON.parse(content);
     if (!exactKeys(decision, [
       "requestId", "bindingEcho", "selectedMoveId", "focus", "reason",
@@ -367,18 +370,54 @@ export async function requestPioneerCurriculum(context) {
     ])) {
       throw new Error("Pioneer curriculum decision has the wrong fields");
     }
+    if (decision.requestId !== clientRequestId) {
+      throw new Error("Pioneer curriculum decision mismatched the request id");
+    }
     if (
-      decision.requestId !== clientRequestId ||
-      !exactKeys(decision.bindingEcho, ["requestProjectionSha256"]) ||
-      decision.bindingEcho.requestProjectionSha256 !== requestProjectionSha256 ||
-      decision.modelVersion !== model ||
-      !moveIds.includes(decision.selectedMoveId) ||
+      !decision.bindingEcho ||
+      typeof decision.bindingEcho !== "object" ||
+      Array.isArray(decision.bindingEcho) ||
+      typeof decision.bindingEcho.requestProjectionSha256 !== "string"
+    ) {
+      const bindingKind = Array.isArray(decision.bindingEcho)
+        ? "array"
+        : decision.bindingEcho === null
+          ? "null"
+          : typeof decision.bindingEcho;
+      const bindingKeys = bindingKind === "object"
+        ? Object.keys(decision.bindingEcho).sort().slice(0, 12).join("|")
+        : "none";
+      throw new Error(
+        `Pioneer curriculum decision returned the wrong binding fields (kind=${bindingKind}, keys=${bindingKeys || "none"})`,
+      );
+    }
+    if (decision.bindingEcho.requestProjectionSha256 !== requestProjectionSha256) {
+      throw new Error("Pioneer curriculum decision mismatched the request hash");
+    }
+    if (decision.modelVersion !== model) {
+      throw new Error("Pioneer curriculum decision mismatched the model version");
+    }
+    if (!moveIds.includes(decision.selectedMoveId)) {
+      throw new Error("Pioneer curriculum decision selected an ineligible move");
+    }
+    if (
       !Array.isArray(decision.evidenceIds) ||
       !decision.evidenceIds.every((value) => typeof value === "string") ||
-      !sameStrings(decision.evidenceIds, evidenceIds) ||
-      !["low", "medium", "high"].includes(decision.confidence)
+      !sameStrings(decision.evidenceIds, evidenceIds)
     ) {
-      throw new Error("Pioneer curriculum decision failed its binding checks");
+      throw new Error("Pioneer curriculum decision mismatched the evidence ids");
+    }
+    const confidence = typeof decision.confidence === "string"
+      ? decision.confidence.trim().toLowerCase()
+      : typeof decision.confidence === "number" && Number.isFinite(decision.confidence)
+        ? decision.confidence >= 0.8
+          ? "high"
+          : decision.confidence >= 0.5
+            ? "medium"
+            : "low"
+        : null;
+    if (!["low", "medium", "high"].includes(confidence)) {
+      throw new Error("Pioneer curriculum decision returned an invalid confidence");
     }
     const inferenceId = text(envelope?.x_pioneer?.inference_id, "Pioneer inference id", 200);
     const move = MOVES[decision.selectedMoveId];
@@ -393,7 +432,7 @@ export async function requestPioneerCurriculum(context) {
       focus: text(decision.focus, "Pioneer focus", 240),
       reason: text(decision.reason, "Pioneer reason", 500),
       evidenceIds,
-      confidence: decision.confidence,
+      confidence,
       usage: usageReceipt(envelope.usage),
     };
   } finally {
