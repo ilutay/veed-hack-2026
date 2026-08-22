@@ -1,6 +1,5 @@
 import react from "@vitejs/plugin-react";
-import type { ProxyOptions } from "vite";
-import { defineConfig } from "vitest/config";
+import { defineConfig, type ProxyOptions } from "vite";
 
 const hardenedTransportProxy = (): ProxyOptions => ({
   target: "http://127.0.0.1:3000",
@@ -45,10 +44,5 @@ export default defineConfig({
       "/api": "http://127.0.0.1:8787",
       "/media": "http://127.0.0.1:8787",
     },
-  },
-  test: {
-    globals: true,
-    environment: "jsdom",
-    setupFiles: ["./src/test-setup.ts"],
   },
 });
