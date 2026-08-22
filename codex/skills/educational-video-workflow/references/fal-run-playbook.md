@@ -38,14 +38,11 @@ Expect ~8s and 7 files: `slide-01.png`..`slide-06.png` at 1024x576, plus
 `voiceover.mp3`. See `fal-media-contract.md` for why both `WORKFLOW_MODE=live`
 and `--poll-interval-seconds 0.5` are set.
 
-To ask an agent to run this, point it at this section rather than restating the
-commands — that way the flags cannot drift out of sync:
+To ask an agent to run this, point it here rather than restating the commands, so
+the flags cannot drift out of sync:
 
-> Follow the Smoke test section of
-> `codex/skills/educational-video-workflow/references/fal-run-playbook.md`,
-> live mode, from the repo root. Reply with the output folder path and whether
-> all 7 files are present. Nothing else — do not open the images or listen to
-> the audio.
+> Run `codex/skills/educational-video-workflow/references/fal-run-playbook.md`
+> with `codex/examples/dotcom-bubble.lesson-script.example.json` as input.
 
 ## Run it directly when you can
 
