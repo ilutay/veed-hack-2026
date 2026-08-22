@@ -149,7 +149,10 @@ async function hydrateProfile(profile: LearnerProfile): Promise<LearnerProfile> 
   const pack = await readPack(slug);
   let next = profile;
 
-  if (profile.onboarding.status === "researching") {
+  if (
+    profile.onboarding.status === "researching" ||
+    profile.onboarding.status === "interests"
+  ) {
     if (job?.status === "failed") {
       return next;
     }
@@ -158,7 +161,14 @@ async function hydrateProfile(profile: LearnerProfile): Promise<LearnerProfile> 
     if (ready && pack) {
       next = await writeLearnerProfile({
         ...profile,
-        onboarding: { ...profile.onboarding, status: "quiz" },
+        onboarding: {
+          ...profile.onboarding,
+          status: "quiz",
+          interests:
+            profile.onboarding.interests?.length
+              ? profile.onboarding.interests
+              : pack.interests,
+        },
       });
     }
   }
@@ -459,7 +469,7 @@ export async function appendChat(
   turns.push({ role: "learner", text, at: ts });
   turns.push({ role: "agent", text: reply, at: nowIso() });
   await writeChat(slug, turns);
-  const next = await writeLearnerProfile(profile);
+  const next = (await readLearnerProfile(slug)) ?? profile;
   return { turns, profile: next };
 }
 

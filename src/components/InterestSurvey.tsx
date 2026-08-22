@@ -78,6 +78,7 @@ export function InterestSurvey({ slug }: InterestSurveyProps) {
               key={label}
               type="button"
               className={`btn taste-chip${on ? " btn-primary" : ""}`}
+              aria-pressed={on}
               disabled={busy || (!on && selected.length >= MAX_INTERESTS)}
               onClick={() => toggle(label)}
             >
@@ -94,6 +95,7 @@ export function InterestSurvey({ slug }: InterestSurveyProps) {
               key={label}
               type="button"
               className="btn taste-chip btn-primary"
+              aria-pressed="true"
               disabled={busy}
               onClick={() => toggle(label)}
             >

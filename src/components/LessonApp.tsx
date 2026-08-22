@@ -10,6 +10,13 @@ import { LessonRuntime } from "@/lib/registry";
 import { ComponentRenderer } from "@tambo-ai/react";
 import { Link } from "react-router-dom";
 
+function onboardingComplete(
+  mode: AppMode,
+  profile: { onboarding?: { status?: string } } | null,
+): boolean {
+  return mode === "demo" || profile?.onboarding?.status === "complete";
+}
+
 function BlockStage() {
   const { episodeId, turnId, blocks, pending, error } = useCodexAction();
 
@@ -35,30 +42,39 @@ function BlockStage() {
   );
 }
 
+function AppShell({ mode }: { mode: AppMode }) {
+  const { profile } = useCodexAction();
+  const ready = onboardingComplete(mode, profile);
+
+  return (
+    <div className="app-shell">
+      <div className="wrap">
+        <header className="app-header">
+          <div className="app-brand">
+            <span className="app-brand-dot" />
+            <span>Taste Labs // Ed-01</span>
+          </div>
+          <div className="receipt" style={{ margin: 0 }}>
+            {mode === "demo" ? (
+              <Link to="/">← Workflow Mode</Link>
+            ) : (
+              <Link to="/demo">Fixture Demo →</Link>
+            )}
+          </div>
+        </header>
+        {ready ? <AssetLibrary /> : null}
+        <BlockStage />
+      </div>
+      {ready ? <AgentChat /> : null}
+    </div>
+  );
+}
+
 export function LessonApp({ mode = "workflow" }: { mode?: AppMode }) {
   return (
     <LessonRuntime>
       <CodexActionProvider mode={mode}>
-        <div className="app-shell">
-          <div className="wrap">
-            <header className="app-header">
-              <div className="app-brand">
-                <span className="app-brand-dot" />
-                <span>Taste Labs // Ed-01</span>
-              </div>
-              <div className="receipt" style={{ margin: 0 }}>
-                {mode === "demo" ? (
-                  <Link to="/">← Workflow Mode</Link>
-                ) : (
-                  <Link to="/demo">Fixture Demo →</Link>
-                )}
-              </div>
-            </header>
-            <AssetLibrary />
-            <BlockStage />
-          </div>
-          <AgentChat />
-        </div>
+        <AppShell mode={mode} />
       </CodexActionProvider>
     </LessonRuntime>
   );

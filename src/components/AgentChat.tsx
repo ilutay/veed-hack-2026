@@ -17,7 +17,7 @@ function nowIso(): string {
 
 export function AgentChat() {
   const { profile, setProfile, dispatch, blocks } = useCodexAction();
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);

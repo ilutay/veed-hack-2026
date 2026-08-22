@@ -621,6 +621,14 @@ section {
   font-variation-settings: "wght" 600;
 }
 
+.taste-chip.btn-primary,
+.taste-chip[aria-pressed="true"] {
+  background: var(--text-main);
+  color: var(--canvas);
+  border-color: var(--text-main);
+  font-variation-settings: "wght" 600;
+}
+
 /* ── Sources & Citations ───────────────────────────────────────────────── */
 .sources {
   margin-top: 48px;
