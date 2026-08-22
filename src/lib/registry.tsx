@@ -1,11 +1,19 @@
+import { InterestSurvey } from "@/components/InterestSurvey";
 import { LessonPlayer } from "@/components/LessonPlayer";
+import { LevelQuiz } from "@/components/LevelQuiz";
 import { NextChoices } from "@/components/NextChoices";
+import { ProfileGate } from "@/components/ProfileGate";
 import { PromptComposer } from "@/components/PromptComposer";
+import { RecommendedTopics } from "@/components/RecommendedTopics";
 import { TasteFeedback } from "@/components/TasteFeedback";
 import {
+  InterestSurveySchema,
   LessonPlayerSchema,
+  LevelQuizSchema,
   NextChoicesSchema,
+  ProfileGateSchema,
   PromptComposerSchema,
+  RecommendedTopicsSchema,
   TasteFeedbackSchema,
 } from "@/lib/schemas";
 import { TamboRegistryProvider, type TamboComponent } from "@tambo-ai/react";
@@ -17,9 +25,37 @@ import type { ReactNode } from "react";
 
 export const lessonComponents: TamboComponent[] = [
   {
+    name: "ProfileGate",
+    description:
+      "Show on boot when the learner has no profile in localStorage. Name field to enter or create a profile.",
+    component: ProfileGate,
+    propsSchema: ProfileGateSchema,
+  },
+  {
+    name: "InterestSurvey",
+    description:
+      "Show when a new profile needs an interest survey. Use after profile_entered for new or incomplete profiles.",
+    component: InterestSurvey,
+    propsSchema: InterestSurveySchema,
+  },
+  {
+    name: "LevelQuiz",
+    description:
+      "Show after interests are submitted. Polls until the quiz pack exists, then collects answers. Props are the profile slug.",
+    component: LevelQuiz,
+    propsSchema: LevelQuizSchema,
+  },
+  {
+    name: "RecommendedTopics",
+    description:
+      "Show when onboarding is complete. Choice cards from the profile; click dispatches recommendation_selected.",
+    component: RecommendedTopics,
+    propsSchema: RecommendedTopicsSchema,
+  },
+  {
     name: "PromptComposer",
     description:
-      "Show when the learner should type a topic. Use after boot and after taste feedback.",
+      "Show when the learner should type a topic. Use after boot, after onboarding completes, and after taste feedback.",
     component: PromptComposer,
     propsSchema: PromptComposerSchema,
   },

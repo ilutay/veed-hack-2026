@@ -60,30 +60,34 @@ export function NextChoices({ run_id }: NextChoicesProps) {
     <section className="next-sec snap">
       <h2 className="display misreg">What next?</h2>
       <div className="choices">
-        {choices.map((n) => (
-          <button
-            key={n.label}
-            type="button"
-            className="choice snap"
-            data-direction={dirOf(n.label)}
-            disabled={pending}
-            onClick={() =>
-              void dispatch({
-                type: "choice_selected",
-                payload: {
-                  run_id,
-                  label: n.label as ChoiceLabel,
-                  direction: n.direction,
-                },
-              })
-            }
-          >
-            <span className="band">
-              <span className="label">{n.label}</span>
-            </span>
-            <span className="direction">{n.direction}</span>
-          </button>
-        ))}
+        {choices.map((n) => {
+          const dir = dirOf(n.label);
+          return (
+            <button
+              key={n.label}
+              type="button"
+              className="choice snap"
+              data-direction={dir}
+              disabled={pending}
+              onClick={() =>
+                void dispatch({
+                  type: "choice_selected",
+                  payload: {
+                    run_id,
+                    label: n.label as ChoiceLabel,
+                    direction: n.direction,
+                  },
+                })
+              }
+            >
+              <div className="band">
+                <span className="label">OPTION {n.label}</span>
+                <span className="direction-tag">{dir}</span>
+              </div>
+              <span className="direction">{n.direction}</span>
+            </button>
+          );
+        })}
       </div>
     </section>
   );

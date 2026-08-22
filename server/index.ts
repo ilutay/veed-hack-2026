@@ -4,7 +4,25 @@ import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { TamboComponentContent } from "@tambo-ai/react";
-import { componentBlock, newId, type CodexAction } from "../src/lib/codex";
+import {
+  blocksForProfile,
+  completeOnboardingBlocks,
+  componentBlock,
+  newId,
+  type CodexAction,
+} from "../src/lib/codex";
+import {
+  appendChat,
+  chatTurns,
+  enterProfile,
+  isQuizChoiceId,
+  packForPublic,
+  parseProfileSlug,
+  quizQuestionsFor,
+  readLearnerProfile,
+  submitInterests,
+  submitQuiz,
+} from "./profiles";
 import {
   mimeFor,
   readRun,
@@ -82,13 +100,14 @@ async function handleCodexAction(
   const turnId = newId("turn");
   let run_id: string | undefined;
   let blocks: TamboComponentContent[] = [];
+  let profile: Awaited<ReturnType<typeof readLearnerProfile>> = null;
 
   switch (action.type) {
-    case "topic_submitted": {
+    case "topic_submitted":
+    case "recommendation_selected": {
+      const topic = action.payload.topic;
       const receipt =
-        mode === "demo"
-          ? await startFixtureRun()
-          : await startWorkflowRun(action.payload.topic);
+        mode === "demo" ? await startFixtureRun() : await startWorkflowRun(topic);
       run_id = receipt.run_id;
       blocks = [componentBlock("LessonPlayer", { run_id }, `player-${run_id}`)];
       break;
@@ -121,6 +140,39 @@ async function handleCodexAction(
       ];
       break;
     }
+    case "profile_entered": {
+      profile = await readLearnerProfile(action.payload.slug);
+      if (!profile) {
+        send(res, 404, { error: "unknown profile" });
+        return;
+      }
+      blocks = blocksForProfile(profile, `p-${turnId}`);
+      break;
+    }
+    case "interests_submitted": {
+      profile = await readLearnerProfile(action.payload.slug);
+      if (!profile) {
+        send(res, 404, { error: "unknown profile" });
+        return;
+      }
+      blocks = [
+        componentBlock(
+          "LevelQuiz",
+          { slug: profile.slug },
+          `quiz-${turnId}`,
+        ),
+      ];
+      break;
+    }
+    case "quiz_submitted": {
+      profile = await readLearnerProfile(action.payload.slug);
+      if (!profile) {
+        send(res, 404, { error: "unknown profile" });
+        return;
+      }
+      blocks = completeOnboardingBlocks(profile, `q-${turnId}`);
+      break;
+    }
     default:
       send(res, 400, { error: "unknown action" });
       return;
@@ -132,6 +184,7 @@ async function handleCodexAction(
     turnId,
     run_id,
     blocks,
+    ...(profile ? { profile } : {}),
   });
 }
 
@@ -157,6 +210,24 @@ async function handleRunCreate(
 
 const FILE_RE = /^\/api\/run\/([^/]+)\/file\/(.+)$/;
 const RUN_RE = /^\/api\/run\/([^/]+)\/?$/;
+const PROFILE_QUIZ_RE = /^\/api\/profile\/([^/]+)\/quiz\/?$/;
+const PROFILE_INTERESTS_RE = /^\/api\/profile\/([^/]+)\/interests\/?$/;
+const PROFILE_CHAT_RE = /^\/api\/profile\/([^/]+)\/chat\/?$/;
+const PROFILE_PACK_RE = /^\/api\/profile\/([^/]+)\/pack\/?$/;
+const PROFILE_ONE_RE = /^\/api\/profile\/([^/]+)\/?$/;
+
+function slugParam(raw: string | undefined): string | null {
+  if (!raw) return null;
+  return parseProfileSlug(raw);
+}
+
+function errStatus(err: unknown): number {
+  if (err && typeof err === "object" && "status" in err) {
+    const n = Number((err as { status: unknown }).status);
+    if (Number.isFinite(n) && n >= 400 && n < 600) return n;
+  }
+  return 500;
+}
 
 const server = http.createServer(async (req, res) => {
   try {
@@ -173,6 +244,178 @@ const server = http.createServer(async (req, res) => {
     }
     if (method === "POST" && p === "/api/run") {
       await handleRunCreate(req, res);
+      return;
+    }
+    if (method === "POST" && p === "/api/profile") {
+      let name = "";
+      try {
+        const body = (await readJson(req)) as { name?: unknown };
+        name = typeof body.name === "string" ? body.name : "";
+      } catch {
+        send(res, 400, { error: "invalid json" });
+        return;
+      }
+      try {
+        const result = await enterProfile(name);
+        send(res, 200, result);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "profile failed";
+        send(res, msg === "name required" ? 400 : 500, { error: msg });
+      }
+      return;
+    }
+    const quizMatch = p.match(PROFILE_QUIZ_RE);
+    if (quizMatch) {
+      const slug = slugParam(quizMatch[1]);
+      if (!slug) {
+        send(res, 404, { error: "unknown profile" });
+        return;
+      }
+      if (method === "GET") {
+        const q = await quizQuestionsFor(slug);
+        if (q.kind === "missing") {
+          send(res, 404, { error: "unknown profile" });
+          return;
+        }
+        if (q.kind === "researching") {
+          send(res, 202, { status: "researching" });
+          return;
+        }
+        if (q.kind === "conflict") {
+          send(res, 409, { error: "quiz not available", status: q.status });
+          return;
+        }
+        send(res, 200, { questions: q.questions });
+        return;
+      }
+      if (method === "POST") {
+        let answers: Record<string, string> = {};
+        try {
+          const body = (await readJson(req)) as { answers?: unknown };
+          if (body.answers && typeof body.answers === "object") {
+            for (const [k, v] of Object.entries(
+              body.answers as Record<string, unknown>,
+            )) {
+              if (isQuizChoiceId(v)) answers[k] = v;
+            }
+          }
+        } catch {
+          send(res, 400, { error: "invalid json" });
+          return;
+        }
+        try {
+          const profile = await submitQuiz(slug, answers);
+          send(res, 200, { status: "submitted", profile });
+        } catch (err) {
+          send(res, errStatus(err), {
+            error: err instanceof Error ? err.message : "quiz failed",
+          });
+        }
+        return;
+      }
+    }
+    const interestsMatch = p.match(PROFILE_INTERESTS_RE);
+    if (interestsMatch && method === "POST") {
+      const slug = slugParam(interestsMatch[1]);
+      if (!slug) {
+        send(res, 404, { error: "unknown profile" });
+        return;
+      }
+      let interests: string[] = [];
+      let goal: string | undefined;
+      try {
+        const body = (await readJson(req)) as {
+          interests?: unknown;
+          goal?: unknown;
+        };
+        if (Array.isArray(body.interests)) {
+          interests = body.interests.filter(
+            (x): x is string => typeof x === "string",
+          );
+        }
+        if (typeof body.goal === "string") goal = body.goal;
+      } catch {
+        send(res, 400, { error: "invalid json" });
+        return;
+      }
+      try {
+        const profile = await submitInterests(slug, interests, goal);
+        send(res, 200, { status: "submitted", profile });
+      } catch (err) {
+        send(res, errStatus(err), {
+          error: err instanceof Error ? err.message : "interests failed",
+        });
+      }
+      return;
+    }
+    const chatMatch = p.match(PROFILE_CHAT_RE);
+    if (chatMatch) {
+      const slug = slugParam(chatMatch[1]);
+      if (!slug) {
+        send(res, 404, { error: "unknown profile" });
+        return;
+      }
+      if (method === "GET") {
+        const turns = await chatTurns(slug);
+        if (!turns) {
+          send(res, 404, { error: "unknown profile" });
+          return;
+        }
+        send(res, 200, { turns });
+        return;
+      }
+      if (method === "POST") {
+        let message = "";
+        try {
+          const body = (await readJson(req)) as { message?: unknown };
+          message = typeof body.message === "string" ? body.message : "";
+        } catch {
+          send(res, 400, { error: "invalid json" });
+          return;
+        }
+        try {
+          const result = await appendChat(slug, message);
+          if (!result) {
+            send(res, 404, { error: "unknown profile" });
+            return;
+          }
+          send(res, 200, result);
+        } catch (err) {
+          send(res, errStatus(err), {
+            error: err instanceof Error ? err.message : "chat failed",
+          });
+        }
+        return;
+      }
+    }
+    const packMatch = p.match(PROFILE_PACK_RE);
+    if (packMatch && method === "GET") {
+      const slug = slugParam(packMatch[1]);
+      if (!slug) {
+        send(res, 404, { error: "unknown profile" });
+        return;
+      }
+      const pack = await packForPublic(slug);
+      if (!pack) {
+        send(res, 404, { error: "pack not found" });
+        return;
+      }
+      send(res, 200, pack);
+      return;
+    }
+    const profileMatch = p.match(PROFILE_ONE_RE);
+    if (profileMatch && method === "GET") {
+      const slug = slugParam(profileMatch[1]);
+      if (!slug) {
+        send(res, 404, { error: "unknown profile" });
+        return;
+      }
+      const profile = await readLearnerProfile(slug);
+      if (!profile) {
+        send(res, 404, { error: "unknown profile" });
+        return;
+      }
+      send(res, 200, profile);
       return;
     }
     const fileMatch = p.match(FILE_RE);
