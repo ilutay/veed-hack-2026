@@ -61,7 +61,7 @@ describe("browser command integrity", () => {
       },
       "gym_spec_binding_mismatch",
     ],
-  ] as const)("stops a drifted %s before render", async (_label, mutate, code) => {
+  ] as const)("stops a drifted %s before Tambo", async (_label, mutate, code) => {
     const command = structuredClone(baselineCommand());
     mutate(command);
 

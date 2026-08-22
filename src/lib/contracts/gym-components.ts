@@ -13,8 +13,8 @@ export const GYM_COMPONENT_ROLES = [
 export type GymComponentRole = (typeof GYM_COMPONENT_ROLES)[number];
 
 /**
- * The runtime-neutral authority for every component Codex may ask the local
- * renderer to show. Pioneer imports the same catalog, so an unregistered component can
+ * The one runtime-neutral authority for every component Codex may ask Tambo to
+ * render. Pioneer imports the same catalog, so an unregistered component can
  * never reach a P1 PASS.
  */
 export const GYM_COMPONENT_DEFINITIONS = {

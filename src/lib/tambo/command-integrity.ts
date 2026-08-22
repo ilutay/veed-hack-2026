@@ -33,7 +33,7 @@ async function canonicalSha256(value: unknown): Promise<string> {
 
 /**
  * Re-verifies the server's immutable command receipt in the browser before
- * any registered component can render. Exercise and feedback commands use
+ * Tambo sees any component. Exercise and feedback commands intentionally use
  * separate policies: feedback remains bound to its source GymSpec but hashes
  * its own visible replay props.
  */

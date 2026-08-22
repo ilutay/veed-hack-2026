@@ -1,8 +1,9 @@
 # Pioneer Gym architecture
 
 This document is the authoritative product and runtime contract for the
-hackathon build. Earlier grayscale frames are design artifacts only; their
-authority labels are superseded by this document.
+hackathon build. The earlier grayscale
+`design/taste-labs-product-architecture-v5.png` frame is retained as a design
+artifact, but its authority labels are superseded by this document.
 
 ## Product contract
 
@@ -23,9 +24,9 @@ answer completion.
   not an unreceipted model action. Codex may reject a Pioneer choice only when the
   choice is invalid, unsafe, or infeasible, and must make the rejection
   visible in a receipt.
-- **The local UI boundary only verifies and renders.** It maps a validated
-  component name and strict props to one allowlisted React component. It has no
-  agent, provider connection, memory, or curriculum authority.
+- **Tambo only renders.** It maps a validated component name and strict props
+  to a registered React component. It has no agent, tools, backend, memory, or
+  curriculum authority.
 - **fal is the source of visual observations.** When an exercise depends on a
   generated visual, the only observations passed to Pioneer are allowlisted
   UTF-8 text and source spans from a verified fal receipt. Pioneer receives no
@@ -39,7 +40,7 @@ flowchart LR
     API --> C[Codex skill runtime]
     C -->|eligible immutable inventory and evidence| P[Pioneer text module]
     P -->|P1 certification or P2 exact choice| C
-    C -->|strict component command and receipts| R[Local registered renderer]
+    C -->|strict component command and receipts| R[Tambo registered renderer]
     R -->|exercise| H
     F[fal response text] -->|allowlisted text and source spans| S[Stimulus receipt skill]
     S --> C
@@ -77,7 +78,7 @@ Only versioned components in `src/lib/contracts/gym-components.ts` are valid:
 - `SafeExerciseFallback`
 
 Callbacks are injected locally by the Codex action provider. They are never
-serialized into UI props.
+serialized into Tambo props.
 
 ## TeamBox boundary
 
@@ -91,9 +92,8 @@ The public application requires a signed, secure, HTTP-only access cookie.
 Health is ready only when the application configuration, Pioneer configuration,
 and protected TeamBox sockets required by live mode are available.
 
-## Sample lesson
+## Secondary demo work
 
-The gated `/lesson` route exposes one checked-in FAL-rendered MP4 through the
-browser's native video player. It proves that the media output is viewable, but
-it is not part of the Pioneer Gym control loop and does not claim that a learner
-prompt generated a new video.
+Compatible teammate experiments may be preserved under `/taste-labs`, behind
+the same access gate. They are not part of the Pioneer Gym control loop and do
+not gain curriculum, Codex, or Tambo authority by sharing the deployment.

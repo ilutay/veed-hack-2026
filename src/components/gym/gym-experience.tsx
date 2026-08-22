@@ -15,12 +15,12 @@ import {
   type GymApiRequest,
   type HumanUiEvent,
   type JourneyProgress,
-} from "@/lib/gym-ui/gym-contract";
+} from "@/lib/tambo/gym-contract";
 import { LIVE_GYM_UI_DEADLINE_MS } from "@/lib/contracts/live-deadlines";
 
 import { CodexActionProvider } from "./codex-action-context";
-import { CommandRenderer } from "./command-renderer";
 import styles from "./gym.module.css";
+import { TamboReceiptRenderer } from "./tambo-receipt-renderer";
 
 const initialProgress: JourneyProgress = {
   steps: [
@@ -245,7 +245,7 @@ export function GymExperience({ endpoint = "/api/gym" }: GymExperienceProps) {
 
         <section className={`${styles.stage} ${interactionPending ? styles.stageBusy : ""}`} aria-busy={interactionPending}>
             <CodexActionProvider command={command} emit={emit} pending={interactionPending}>
-              <CommandRenderer command={command} />
+              <TamboReceiptRenderer command={command} />
             </CodexActionProvider>
             {interactionPending ? (
               <div className={styles.pendingVeil} aria-live="polite">
