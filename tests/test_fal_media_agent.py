@@ -45,6 +45,7 @@ def args_for(script: Path, output_dir: Path, mode: str = "dry-run") -> argparse.
         voice="Friendly_Person",
         emotion="happy",
         language="en",
+        speed=1.2,
         image_size="landscape_16_9",
         image_steps=8,
         max_workers=7,
@@ -136,7 +137,7 @@ class FalMediaAgentTests(unittest.TestCase):
             self.assertIn("[pause]", voice_payload["payload"]["prompt"])
             self.assertEqual(
                 voice_payload["payload"]["voice_setting"],
-                {"voice_id": "Friendly_Person", "emotion": "happy"},
+                {"voice_id": "Friendly_Person", "emotion": "happy", "speed": 1.2},
             )
             self.assertEqual(voice_payload["payload"]["language_boost"], "English")
             self.assertEqual(voice_payload["payload"]["output_format"], "url")
@@ -144,7 +145,7 @@ class FalMediaAgentTests(unittest.TestCase):
             self.assertEqual(intro_payload["payload"]["prompt"], "Let's make attention concrete.")
             self.assertEqual(
                 intro_payload["payload"]["voice_setting"],
-                {"voice_id": "Friendly_Person", "emotion": "happy"},
+                {"voice_id": "Friendly_Person", "emotion": "happy", "speed": 1.2},
             )
             self.assertEqual(intro_payload["target_duration_seconds"], 5)
             self.assertEqual(len(timings["segments"]), 5)

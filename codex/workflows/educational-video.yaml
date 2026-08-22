@@ -53,6 +53,14 @@ stages:
     mode: parallel
     depends_on:
       - research_script
+    concurrency: >
+      Launch every branch below in the same turn lesson_script.json is
+      written, each as its own subagent (Agent tool) — never run one branch
+      to completion before starting another. talking_head_intro in
+      particular is the long pole (VEED render, ~1-2 min); starting it after
+      the fal branch finishes roughly doubles this stage's wall-clock time
+      for no benefit, since no branch reads another's output. See
+      ../skills/educational-video-workflow/references/workflow-contract.md.
     branches:
       - id: talking_head_intro
         agent: ../subagents/talking-head-agent.md
@@ -93,14 +101,6 @@ stages:
       - assets/**
       - webpage-build.json
 
-  - id: integration_qa
-    agent: ../subagents/integration-qa-agent.md
-    mode: sequential
-    depends_on:
-      - assemble_webpage
-    output:
-      - qa-report.md
-
 api_boundaries:
   - Do not call paid or mutating provider APIs unless credentials and an explicit run mode are configured.
   - Prefer dry-run MCP/API contract tests while schemas and providers are still evolving.
@@ -113,4 +113,3 @@ artifact_layout:
     research_script: 01-research-script
     content_generation: 02-content-generation
     assemble_webpage: 03-webpage
-    integration_qa: 04-qa

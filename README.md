@@ -25,8 +25,7 @@ codex/
 |   |-- talking-head-agent.md
 |   |-- slide-image-agent.md
 |   |-- voiceover-agent.md
-|   |-- page-assembly-agent.md
-|   `-- integration-qa-agent.md
+|   `-- page-assembly-agent.md
 |-- skills/
 |   |-- educational-video-workflow/
 |   |-- topic-research-script/

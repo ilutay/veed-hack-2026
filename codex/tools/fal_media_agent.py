@@ -178,6 +178,12 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--voice", default=os.environ.get("FAL_TTS_VOICE", "Friendly_Person"))
     parser.add_argument("--emotion", default=os.environ.get("FAL_TTS_EMOTION", "happy"))
     parser.add_argument("--language", default=os.environ.get("FAL_TTS_LANGUAGE", "en"))
+    parser.add_argument(
+        "--speed",
+        default=float(os.environ.get("FAL_TTS_SPEED", "1.2")),
+        type=float,
+        help="MiniMax voice_setting.speed multiplier. 1.0 is normal pace; >1.0 talks faster.",
+    )
     parser.add_argument("--image-size", default=os.environ.get("FAL_IMAGE_SIZE", "landscape_16_9"))
     parser.add_argument(
         "--image-steps",
@@ -238,6 +244,7 @@ def run_agent(
         voice=args.voice,
         emotion=args.emotion,
         language=args.language,
+        speed=args.speed,
     )
     intro_payload = (
         build_intro_audio_payload(
@@ -247,6 +254,7 @@ def run_agent(
             emotion=args.emotion,
             language=args.language,
             target_seconds=args.intro_seconds,
+            speed=args.speed,
         )
         if lesson.get("intro")
         else None
@@ -582,6 +590,7 @@ def build_voice_payload(
     voice: str,
     emotion: str,
     language: str,
+    speed: float,
 ) -> dict[str, Any]:
     segments = [
         {
@@ -603,6 +612,7 @@ def build_voice_payload(
         "voice": voice,
         "emotion": emotion,
         "language": language,
+        "speed": speed,
         "segments": segments,
         "target_duration_seconds": sum(
             int(segment["target_duration_seconds"] or estimate_duration_seconds(segment["text"]))
@@ -613,6 +623,7 @@ def build_voice_payload(
             "voice_setting": {
                 "voice_id": voice,
                 "emotion": emotion,
+                "speed": speed,
             },
             "language_boost": language_boost(language),
             "output_format": "url",
@@ -628,6 +639,7 @@ def build_intro_audio_payload(
     emotion: str,
     language: str,
     target_seconds: int,
+    speed: float,
 ) -> dict[str, Any]:
     """Payload for the short talking-head intro clip, kept separate from the
     combined slide narration so it can be generated and swapped independently.
@@ -639,12 +651,14 @@ def build_intro_audio_payload(
         "voice": voice,
         "emotion": emotion,
         "language": language,
+        "speed": speed,
         "target_duration_seconds": target_seconds,
         "payload": {
             "prompt": text,
             "voice_setting": {
                 "voice_id": voice,
                 "emotion": emotion,
+                "speed": speed,
             },
             "language_boost": language_boost(language),
             "output_format": "url",

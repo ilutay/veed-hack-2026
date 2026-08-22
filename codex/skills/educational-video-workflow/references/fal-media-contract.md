@@ -62,6 +62,10 @@ combined `prompt` plus the MiniMax voice settings. Defaults:
 
 - `voice_setting.voice_id`: `Friendly_Person`
 - `voice_setting.emotion`: `happy`
+- `voice_setting.speed`: `1.2` (`--speed` / `FAL_TTS_SPEED`) — faster than
+  MiniMax's natural 1.0 pace. The 15-second script format has no slack for
+  real-time narration; measured audio at `speed=1.0` has come back 2-3x the
+  scripted 15s. Raise further if narration still overruns the slide timeline.
 - `language_boost`: mapped from the `--language` code (`en` -> `English`,
   unknown codes -> `auto`)
 - `output_format`: `url`
