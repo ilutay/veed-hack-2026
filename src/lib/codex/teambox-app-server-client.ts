@@ -11,6 +11,7 @@ export const TEAMBOX_CODEX_PROTOCOL_VERSION = "0.149.0" as const;
 export const TEAMBOX_CODEX_MODEL = "gpt-5.6-luna" as const;
 export const TEAMBOX_CODEX_REASONING_EFFORT = "low" as const;
 export const TEAMBOX_CODEX_SERVICE_TIER = "fast" as const;
+const TEAMBOX_CODEX_SERVICE_TIER_RECEIPTS = ["fast", "priority"] as const;
 export const TEAMBOX_CODEX_APP_SERVER_SOCKET =
   "/run/teambox-codex/app-server.sock" as const;
 export const TEAMBOX_FIXED_REPO_ROOT =
@@ -120,6 +121,12 @@ function isRecord(value: unknown): value is JsonRecord {
 
 function deepEqualJson(left: unknown, right: unknown): boolean {
   return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function isExpectedServiceTierReceipt(value: unknown): boolean {
+  return TEAMBOX_CODEX_SERVICE_TIER_RECEIPTS.some(
+    (serviceTier) => value === serviceTier,
+  );
 }
 
 function actionFromTrustedPrompt(prompt: string): CodexAction {
@@ -374,7 +381,7 @@ async function runThroughFixedProxy(
       threadStart.cwd !== fixedRepoRoot ||
       threadStart.approvalPolicy !== "never" ||
       threadStart.model !== TEAMBOX_CODEX_MODEL ||
-      threadStart.serviceTier !== TEAMBOX_CODEX_SERVICE_TIER ||
+      !isExpectedServiceTierReceipt(threadStart.serviceTier) ||
       !sandbox ||
       sandbox.type !== "readOnly" ||
       sandbox.networkAccess !== false

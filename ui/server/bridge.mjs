@@ -35,6 +35,12 @@ import { createProfileStore, parseProfileSlug, TASTE_REACTIONS } from "./profile
 const PORT = Number(process.env.BRIDGE_PORT ?? 8787);
 const RUN_AS = process.env.CODEX_USER ?? "codex-runner";
 const CODEX_HOME = process.env.CODEX_HOME ?? "/var/lib/codex-runner";
+const CODEX_EXEC_ARGV = Object.freeze([
+  "codex", "exec",
+  "--model", "gpt-5.6-luna",
+  "--config", 'model_reasoning_effort="low"',
+  "--config", 'service_tier="fast"',
+]);
 const SCHEMA = resolve(import.meta.dirname, "component-command.schema.json");
 
 const REPO_ROOT = resolve(import.meta.dirname, "..", "..");
@@ -134,7 +140,7 @@ function runCodexTurn(prompt) {
     const args = [
       "-n", "-u", RUN_AS,
       "env", `HOME=${CODEX_HOME}`,
-      "codex", "exec",
+      ...CODEX_EXEC_ARGV,
       "--skip-git-repo-check",
       "--sandbox", "read-only",
       "-C", dir,
@@ -180,7 +186,7 @@ function codexJson(prompt, schema) {
       [
         "-n", "-u", RUN_AS,
         "env", `HOME=${CODEX_HOME}`,
-        "codex", "exec",
+        ...CODEX_EXEC_ARGV,
         "--skip-git-repo-check",
         "--sandbox", "read-only",
         "-C", dir,
@@ -408,7 +414,7 @@ async function renderLesson(job) {
     [
       "-n", "-u", RUN_AS,
       "env", `HOME=${CODEX_HOME}`,
-      "codex", "exec",
+      ...CODEX_EXEC_ARGV,
       "--skip-git-repo-check",
       "--sandbox", "read-only",
       "-C", REPO_ROOT,
