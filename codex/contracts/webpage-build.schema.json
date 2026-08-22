@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taste-labs.local/contracts/webpage-build.schema.json",
+  "title": "WebpageBuild",
+  "type": "object",
+  "required": ["run_id", "entrypoint", "assets", "checks"],
+  "additionalProperties": false,
+  "properties": {
+    "run_id": { "type": "string", "minLength": 1 },
+    "entrypoint": { "type": "string", "minLength": 1 },
+    "assets": { "type": "array", "items": { "type": "string" } },
+    "checks": {
+      "type": "object",
+      "required": ["contract_validation", "media_files_exist", "page_renders"],
+      "additionalProperties": false,
+      "properties": {
+        "contract_validation": { "type": "boolean" },
+        "media_files_exist": { "type": "boolean" },
+        "page_renders": { "type": "boolean" },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

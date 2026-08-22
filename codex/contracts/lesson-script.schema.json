@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taste-labs.local/contracts/lesson-script.schema.json",
+  "title": "LessonScript",
+  "type": "object",
+  "required": ["topic", "learning_objective", "audience", "duration_seconds", "slides", "intro"],
+  "additionalProperties": false,
+  "properties": {
+    "topic": { "type": "string", "minLength": 1 },
+    "learning_objective": { "type": "string", "minLength": 1 },
+    "audience": { "type": "string", "minLength": 1 },
+    "duration_seconds": { "type": "integer", "minimum": 30, "maximum": 900 },
+    "style_notes": { "type": "array", "items": { "type": "string" } },
+    "intro": {
+      "type": "object",
+      "required": ["hook", "talking_head_script", "duration_seconds"],
+      "additionalProperties": false,
+      "properties": {
+        "hook": { "type": "string", "minLength": 1 },
+        "talking_head_script": { "type": "string", "minLength": 1 },
+        "duration_seconds": { "type": "integer", "minimum": 5, "maximum": 45 }
+      }
+    },
+    "slides": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "narration", "visual_brief", "duration_seconds"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^slide-[0-9]{2}$" },
+          "title": { "type": "string", "minLength": 1 },
+          "key_points": { "type": "array", "items": { "type": "string" } },
+          "narration": { "type": "string", "minLength": 1 },
+          "visual_brief": { "type": "string", "minLength": 1 },
+          "duration_seconds": { "type": "integer", "minimum": 5, "maximum": 120 },
+          "source_ids": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "url"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "url": { "type": "string" },
+          "publisher": { "type": "string" },
+          "accessed_at": { "type": "string" }
+        }
+      }
+    }
+  }
+}
