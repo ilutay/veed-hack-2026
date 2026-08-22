@@ -1,9 +1,11 @@
 # fal Media Contract
 
 Use `codex/tools/fal_media_agent.py` for the `slide_images` and
-`voiceover_video` branches, and for the intro-audio half of
-`talking_head_intro` (the video half goes through the `veed-fabric` MCP
-server — see `../../veed-talking-head/references/veed-contract.md`).
+`voiceover_video` branches, and for all three requests behind
+`talking_head_intro` — intro audio, the presenter avatar image, and the
+`veed/fabric-1.0` video itself. See
+`../../veed-talking-head/references/veed-contract.md` for the video request
+shape.
 
 ## Command
 
@@ -35,6 +37,10 @@ provider request. Do not read `.env.local`.
 - Voiceover: `fal-ai/minimax/speech-2.6-turbo`
 - Talking-head intro audio: `fal-ai/minimax/speech-2.6-turbo` (same endpoint as
   voiceover, one short request instead of the combined slide narration)
+- Talking-head presenter avatar image: `fal-ai/z-image/turbo` (same endpoint
+  as slides, fixed prompt/seed so the presenter is consistent across runs)
+- Talking-head video: `veed/fabric-1.0` — image+audio→video; takes the avatar
+  image and intro audio above and returns a lip-synced video
 
 ## Inputs
 
@@ -86,9 +92,32 @@ Submit a second, independent queue job to the same
 `FAL_INTRO_SECONDS`) and is advisory only, exactly like the per-slide
 `target_duration_seconds` hints — the provider does not enforce it.
 
-This clip is a fast, credential-light preview of the intro line; it is not
-passed into the `veed-fabric` MCP call that produces `talking-head-intro.mp4`.
-See `../../veed-talking-head/SKILL.md` ("Why two providers for one clip").
+This clip is also the exact `audio_url` input fed into the `veed/fabric-1.0`
+request below — unlike the old MCP-based flow, nothing here regenerates the
+speech.
+
+## Talking-Head Avatar Image Request
+
+Submit a third queue job to `fal-ai/z-image/turbo` when `lesson_script.intro`
+is present, using a fixed prompt and a seed derived from a constant key (not
+`run_id`), so the same presenter face appears across runs. Runs in parallel
+with everything else — it does not depend on the audio job.
+
+## Talking-Head Video Request
+
+Once the avatar image and intro audio jobs above have both completed, submit
+one `veed/fabric-1.0` request with their fal-hosted URLs:
+
+```json
+{ "image_url": "<avatar image url>", "audio_url": "<intro audio url>", "resolution": "720p" }
+```
+
+`resolution` defaults to `720p` (`--video-resolution` / `FAL_VIDEO_RESOLUTION`,
+also accepts `480p`). Poll like every other fal request and download the
+response's `video.url` to `talking-head-intro.mp4`. The avatar and audio URLs
+carry signed tokens — pass them straight through in memory and never write
+them to disk; only the redacted submit/response JSON and the downloaded files
+are persisted.
 
 ## Outputs
 
@@ -100,5 +129,10 @@ See `../../veed-talking-head/SKILL.md` ("Why two providers for one clip").
 - `02-content-generation/voiceover-payload.json`
 - `02-content-generation/talking-head-intro-audio.mp3` (only when `intro` is present)
 - `02-content-generation/talking-head-intro-audio-payload.json` (only when `intro` is present)
+- `02-content-generation/talking-head-avatar.png` (only when `intro` is present)
+- `02-content-generation/talking-head-avatar-payload.json` (only when `intro` is present)
+- `02-content-generation/talking-head-intro.mp4` (only when `intro` is present)
+- `02-content-generation/talking-head-video-payload.json` (only when `intro` is present)
+- `02-content-generation/talking-head-metadata.json` (only when `intro` is present, `test`/`live` only)
 - `02-content-generation/narration-timings.json`
 - sanitized provider metadata under `02-content-generation/provider/`

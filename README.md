@@ -8,7 +8,7 @@ The workflow is intentionally contract-first:
 
 1. Research a topic and produce a structured lesson script.
 2. Generate a short talking-head intro: a 5-second audio clip via fal, then a
-   video via the VEED Fabric MCP server (see `AGENTS.md` → "MCP servers").
+   video from fal's `veed/fabric-1.0` model (see `AGENTS.md`).
 3. Generate slide images in parallel.
 4. Generate voiceover video or timed narration assets.
 5. Assemble the outputs into a webpage with slides and voiceover.

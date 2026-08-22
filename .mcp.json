@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "veed-fabric": {
-      "type": "http",
-      "url": "https://www.veed.io/api/v1/mcp"
-    }
-  }
-}

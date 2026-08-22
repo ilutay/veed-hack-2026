@@ -21,39 +21,20 @@ Each stage should be rerunnable from its declared inputs. If a provider returns 
 
 ## Content Generation Concurrency
 
-The `content_generation` step has two independent branches with no data
-dependency between them, so they must be started together, not chained.
-Sequencing them back-to-back (fal script fully finishes, then start the VEED
-MCP calls) is a workflow bug, not just a slower path: the VEED render alone
-typically takes 1-2 minutes, so serializing it after slide/voiceover
-generation can roughly double or triple the wall-clock time of the whole
-`content_generation` step for no reason — neither branch reads the other's
-output.
+All of `content_generation` — slide images, voiceover, and the full
+talking-head stage (intro audio, avatar image, and the `veed/fabric-1.0`
+video) — now runs through fal from a single `codex/tools/fal_media_agent.py`
+invocation. There is no separate MCP tool sequence for the orchestrating
+agent to drive turn-by-turn anymore: launch that one script (directly, or as
+a subagent if you want the orchestrating agent's own turn free in the
+meantime) and let its internal thread pool handle the fan-out.
 
-**Use a subagent for the branch that would otherwise block your own turn.**
-A plain background shell process (`run_in_background`) is enough for two
-independent *shell commands*, but the VEED branch isn't a shell command — it
-is a sequence of MCP tool calls (`confirm_fabric_video` →
-`create_fabric_video` → poll `get_generation_status`) that the orchestrating
-agent has to drive turn-by-turn. If that same agent also runs
-`fal_media_agent.py` in the foreground first, the VEED sequence cannot start
-until the fal script exits, no matter how the fal script itself is invoked.
-Concretely:
-
-- Launch a subagent (Agent tool; a `fork` is enough since it inherits run
-  context) to drive `codex/tools/fal_media_agent.py` end to end — submit,
-  poll, download, write `asset-manifest.json` — and report back on exit. This
-  frees the orchestrating agent's own turn immediately.
-- In the same response that launches that subagent, the orchestrating agent
-  itself starts the `veed-talking-head` skill's MCP tool sequence. It does
-  not wait for the fal subagent first.
-- Only rendezvous — reading both results and moving to `assemble_webpage` —
-  once the fal subagent has reported back **and** `get_generation_status`
-  has returned a terminal status.
-
-This is the single highest-leverage optimization in the whole pipeline: it
-turns the stage's wall-clock time from *(fal time) + (VEED time)* into
-*max(fal time, VEED time)*, and VEED is usually the longer of the two.
+Inside the script, the avatar image and intro audio jobs are submitted in
+parallel with the slide images and voiceover. The `veed/fabric-1.0` video
+request is the one real data dependency in this stage — it needs both the
+avatar image URL and the intro audio URL, so it is only submitted after
+those two jobs complete. That dependency is internal to the script and
+requires no orchestration from the calling agent.
 
 ## Latency Budget
 
@@ -93,9 +74,10 @@ The tool stages leave roughly 20s of headroom, and two things spend it:
 - **The script stage must be a single LLM call**, not an agent loop. It sits
   on the critical path between research and generation, and nothing else can
   proceed without `lesson-script.json`.
-- **`talking_head_intro` does not fit.** A VEED Fabric render takes 1–2
-  minutes on its own — several times the entire budget. The lesson-script
-  contract already makes `intro` optional and the stage is skipped when it is
-  absent, which is the right default for the 15-second format. Keep it only
-  for runs with no wall-clock target, or deliver it asynchronously: publish
-  the page from the slide track and swap the intro in when it lands.
+- **`talking_head_intro` does not fit.** A `veed/fabric-1.0` render plus its
+  avatar-image and intro-audio dependencies still takes well over the entire
+  budget. The lesson-script contract already makes `intro` optional and the
+  stage is skipped when it is absent, which is the right default for the
+  15-second format. Keep it only for runs with no wall-clock target, or
+  deliver it asynchronously: publish the page from the slide track and swap
+  the intro in when it lands.

@@ -1,7 +1,7 @@
 # AGENTS.md
 
 How agents and humans handle API credentials in this repo. Read this before any
-stage that touches an external provider (fal.ai, Veed.io).
+stage that touches an external provider (fal.ai).
 
 ## TL;DR
 
@@ -12,6 +12,10 @@ scripts/with-env.sh <command>  # run anything with credentials in scope
 ```
 
 Never open `.env.local`. Never paste a key into a command, a file, or a message.
+
+Every provider in this repo, including talking-head video generation, is a
+fal.ai REST call authenticated with `FAL_KEY` — there is no MCP server and no
+per-developer OAuth login to set up.
 
 ## Layout
 
@@ -82,10 +86,6 @@ Rules that follow from this:
 WORKFLOW_MODE=live scripts/with-env.sh scripts/check-env.sh fal
 ```
 
-Veed.io is not in this table — see [MCP servers](#mcp-servers) below. It
-authenticates by OAuth through the agent's MCP connection, not an env var, so
-`check-env.sh` has nothing to check for it.
-
 ## Secret hygiene
 
 Non-negotiable, in rough order of how easy each is to do by accident:
@@ -121,49 +121,20 @@ Current providers:
 
 | Provider | Variable | Stage | Auth header |
 | --- | --- | --- | --- |
-| fal.ai | `FAL_KEY` | `slide_images`, `voiceover_video`, `talking_head_intro` (intro audio) | `Authorization: Key $FAL_KEY` |
+| fal.ai | `FAL_KEY` | `slide_images`, `voiceover_video`, `talking_head_intro` (intro audio, avatar image, and `veed/fabric-1.0` video) | `Authorization: Key $FAL_KEY` |
 | Tavily | `TAVILY_API_KEY` | `topic_research` | `Authorization: Bearer $TAVILY_API_KEY` |
 
-Veed.io is not a `FAL_KEY`-style REST provider — it is an MCP server. See
-[MCP servers](#mcp-servers).
-
-## MCP servers
-
-Some stages talk to a provider through an MCP tool connection instead of a
-REST call with an env-var key. There is one today:
-
-| Server | Stage | Endpoint | Auth |
-| --- | --- | --- | --- |
-| VEED Fabric | `talking_head_intro` (video) | `https://www.veed.io/api/v1/mcp` (Streamable HTTP) | OAuth 2.0, per developer, via browser login |
-
-Unlike the providers above, there is no key to put in `.env.local`. Each
-developer authorizes their own VEED account once per client, and the
-authorization is cached by that client (Claude Code or Codex), not by this
-repo.
-
-### Configuration
-
-Both clients are pre-wired in this repo:
-
-- **Claude Code** reads `.mcp.json` at the repo root (checked in, no secrets —
-  it is just the server URL). The first tool call opens a browser to VEED's
-  login page; after that, `claude mcp list` shows `veed-fabric` as connected.
-- **Codex CLI** reads `.codex/config.toml` at the repo root (also checked in
-  and secret-free). Run `codex mcp login veed-fabric` once to complete the
-  OAuth flow before the first `live` or `test` call. If a Codex build predates
-  Streamable HTTP MCP support, add `[features]\nexperimental_use_rmcp_client = true`
-  above the `[mcp_servers."veed-fabric"]` block, or upgrade Codex.
-
-Both configs point at the same server; there is nothing to keep in sync
-beyond the URL.
+`talking_head_intro`'s video half calls fal's `veed/fabric-1.0` endpoint —
+same `FAL_KEY`, same `codex/tools/fal_media_agent.py` script, no separate
+setup. See `codex/skills/veed-talking-head/references/veed-contract.md` for
+the request shape.
 
 ### Dry-run still applies
 
-`WORKFLOW_MODE` gates the MCP tool calls exactly like it gates fal requests —
-`dry-run` emits the intended tool-call sequence and payloads without invoking
-`veed-fabric` at all, so no VEED login or credit spend is needed to develop or
-test the rest of the pipeline. See
-`codex/skills/veed-talking-head/references/veed-contract.md`.
+`WORKFLOW_MODE` gates every fal request the same way, including
+`veed/fabric-1.0` — `dry-run` emits the intended request payloads without
+calling fal at all, so no credit spend is needed to develop or test the rest
+of the pipeline.
 
 ## Troubleshooting
 

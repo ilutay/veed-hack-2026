@@ -1,113 +1,85 @@
 # Veed Contract
 
-Video generation goes through the **VEED Fabric MCP server**
-(`https://www.veed.io/api/v1/mcp`, Streamable HTTP, OAuth 2.0 per developer —
-see "MCP servers" in `AGENTS.md`), called directly by the agent, not by a
-Python script with an API key. There is no `VEED_API_KEY`.
+Talking-head video generation goes through **fal**, calling the
+`veed/fabric-1.0` endpoint from `codex/tools/fal_media_agent.py` — the same
+script and `FAL_KEY` used for slide images and voiceover. There is no MCP
+server and no OAuth login for this stage; see `AGENTS.md` for the `FAL_KEY`
+credential flow.
 
-Server and tool details below were current as of 2026-08-22, sourced from
-`https://veedstudio.github.io/veed-fabric-mcp/tools-reference.html`. Re-check
-that page (or `codex mcp list` / `claude mcp list` tool descriptions) if a
-call is rejected for an unknown field — VEED's schema is not vendored here.
+## `veed/fabric-1.0`
 
-## Default character and voice
+An image-to-video model: it takes a still image and an audio clip and
+returns a video of the image's subject lip-syncing to the audio. It does not
+do its own text-to-speech, so it needs the intro audio clip generated first.
 
-Unless a work order or user names a different character/voice for the run,
-skip `list_characters`/`list_voices` and use these ids directly:
+Request:
 
-- `characterId`: `"character-19"` (male avatar, chosen 2026-08-22 by
-  eyeballing `list_characters` thumbnails)
-- `voiceId`: `"en-CA-LiamNeural"` (male, English (Canada) — the first
-  general-purpose English male voice returned by `list_voices({locale: "en",
-  gender: "Male"})`; no `en-US` male voice was on the first two result pages)
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `image_url` | string | yes | The presenter avatar image (`talking-head-avatar.png`), a fal-hosted URL. |
+| `audio_url` | string | yes | The intro line the avatar should speak, a fal-hosted URL from `fal-ai/minimax/speech-2.6-turbo`. |
+| `resolution` | `"720p"` \| `"480p"` | yes | `--video-resolution` / `FAL_VIDEO_RESOLUTION`, default `"720p"`. |
 
-This is a fixed default for unattended `test`/`live` runs, not a
-per-conversation "auto-pick something" instruction — reuse the same two ids
-every time rather than re-deriving them, so repeated runs are reproducible.
-Re-run `list_characters`/`list_voices` (see [Tool sequence](#tool-sequence))
-only when asked to use a different character or voice.
+Response: `{"video": {"url": "...", "content_type": "video/mp4", ...}}`.
 
-## Tool sequence
+## Tool sequence (all inside `fal_media_agent.py`)
 
-Call in this order. Do not skip `confirm_fabric_video` — it is the only place
-the cost is shown before credits are spent. Steps 1–2 are skipped when using
-the default character/voice above.
+1. Submit the avatar image job to `fal-ai/z-image/turbo` (`build_avatar_image_payload`).
+2. Submit the intro audio job to `fal-ai/minimax/speech-2.6-turbo`
+   (`build_intro_audio_payload`) — in parallel with step 1 and the slide/voiceover jobs.
+3. Once both complete, submit `veed/fabric-1.0` with their `image_url`/`audio_url`
+   (`generate_talking_head_video`).
+4. Poll the fal queue until `status` is a terminal state, exactly like every
+   other fal request in this script (see `wait_for_result`).
+5. Download the resulting `video.url` to `talking-head-intro.mp4`.
 
-1. **`list_characters`** — optional `gender` filter (`"male"` \| `"female"`).
-   Returns avatar `id`s. Pick one, or surface the carousel for a human to
-   pick.
-2. **`list_voices`** — required `locale` (e.g. `"en"`, `"en-GB"`, `"fr"`),
-   optional `gender` filter (`"Female"` \| `"Male"` \| `"Neutral"`). Derive
-   `locale` from the lesson's language; default `"en"`. Returns voice `id`s.
-3. **`confirm_fabric_video`** — `script`, `voiceId`, `characterId`, optional
-   `workspaceId`, `aspectRatio` (`"landscape"` \| `"portrait"` \| `"square"`,
-   default landscape — use `"landscape"` to match the slide webpage unless
-   told otherwise). Returns an estimated credit cost. In an unattended `test`/
-   `live` run, treat this as a hard preflight: abort if
-   `get_credit_balance` shows fewer credits than the estimate.
-4. **`create_fabric_video`** — same arguments as step 3, plus optional
-   `projectId`. Costs **~8 credits per second of output**. Returns `jobId`,
-   `workspaceId`, `projectId`.
-5. **`get_generation_status`** — poll with `jobId` until `status` is
-   `completed` (returns a video URL) or `error`. Typical generation time is
-   1–2 minutes.
+## Avatar image
 
-Auxiliary tools, call as needed rather than in the fixed sequence:
-
-- **`list_workspaces`** — only if the account has more than one workspace and
-  `workspaceId` needs to be chosen explicitly.
-- **`get_credit_balance`** — optional `workspaceId`. Check before a long
-  script, or when `confirm_fabric_video`'s estimate is close to the balance.
+`build_avatar_image_payload` uses a fixed prompt (`DEFAULT_AVATAR_PROMPT`) and
+a seed derived from a constant key (`DEFAULT_AVATAR_SEED_KEY`), not the run
+id — this keeps the same presenter across runs instead of generating a new
+face every time, mirroring the fixed default character the old MCP-based
+flow used. Re-run with a different prompt/seed (or point `image_url` at a
+fixed hosted image) only when asked to use a different look.
 
 ## Script input
 
-`script` is `lesson_script.intro.talking_head_script`, unmodified. VEED
-performs its own text-to-speech from this string using the chosen `voiceId` —
-it does not accept an external audio file. See the "Why two providers"
-section in `../SKILL.md` for how this relates to the fal-generated
-`talking-head-intro-audio.mp3`.
+The audio clip's source text is `lesson_script.intro.talking_head_script`,
+unmodified — see `build_intro_audio_payload` in `fal_media_agent.py`.
 
-## Dry-run payload
+## Dry-run payloads
 
-In `dry-run`, do not call any `veed-fabric` tool. Emit the intended sequence
-as `talking-head-request.json`:
+In `dry-run`, `fal_media_agent.py` does not call fal. It still writes:
+
+- `talking-head-avatar-payload.json` — the fully-formed avatar image request
+  (this one has no unknowns, so it is identical in dry-run and live).
+- `talking-head-video-payload.json` — the intended `veed/fabric-1.0` request
+  shape, with `image_url`/`audio_url` left `null` because nothing has been
+  generated yet:
 
 ```json
 {
-  "mode": "dry-run",
-  "server": "veed-fabric",
-  "calls": [
-    { "tool": "list_characters", "arguments": {} },
-    { "tool": "list_voices", "arguments": { "locale": "en" } },
-    {
-      "tool": "confirm_fabric_video",
-      "arguments": { "script": "...", "voiceId": null, "characterId": null, "aspectRatio": "landscape" }
-    },
-    {
-      "tool": "create_fabric_video",
-      "arguments": { "script": "...", "voiceId": null, "characterId": null, "aspectRatio": "landscape" }
-    },
-    { "tool": "get_generation_status", "arguments": { "jobId": null } }
-  ]
+  "run_id": "...",
+  "endpoint": "veed/fabric-1.0",
+  "resolution": "720p",
+  "payload": { "image_url": null, "audio_url": null, "resolution": "720p" }
 }
 ```
 
-`voiceId`, `characterId`, and `jobId` are `null` because nothing has actually
-been listed or created yet — filling them in would misrepresent a call that
-never happened.
+## Minimum metadata fields
 
-## Minimum Metadata Fields
+`talking-head-metadata.json`:
 
-Write to `talking-head-metadata.json`:
-
-- `provider`: `veed-fabric-mcp`
-- `mode`: `dry-run`, `test`, or `live`
-- `character_id`, `voice_id`, `workspace_id` (as selected/returned)
-- `job_id` (from `create_fabric_video`)
-- `estimated_cost_credits` (from `confirm_fabric_video`)
+- `provider`: `fal.ai`
+- `endpoint`: `veed/fabric-1.0`
+- `resolution`
+- `job_id` (fal `request_id`)
 - `output_path`
-- `status` (from `get_generation_status`)
+- `status`
 
-Do not hide provider errors. Preserve raw MCP tool responses (redact nothing
-except credentials, and there are none in these responses) in the stage
-directory.
+Do not hide provider errors. Sanitized submit/response JSON for every request
+in this stage lands under `02-content-generation/provider/`
+(`talking-head-avatar-*`, `talking-head-intro-audio-*`,
+`talking-head-video-*`) via the same `sanitize_provider_json` redaction used
+for slides and voiceover — signed URLs and auth headers are stripped before
+anything is written to disk.

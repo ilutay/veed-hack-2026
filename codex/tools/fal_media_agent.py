@@ -27,7 +27,16 @@ from typing import Any
 
 IMAGE_ENDPOINT = "fal-ai/z-image/turbo"
 VOICE_ENDPOINT = "fal-ai/minimax/speech-2.6-turbo"
+AVATAR_IMAGE_ENDPOINT = IMAGE_ENDPOINT
+TALKING_HEAD_VIDEO_ENDPOINT = "veed/fabric-1.0"
 VOICE_TEXT_LIMIT = 5000
+DEFAULT_AVATAR_SEED_KEY = "default-presenter-avatar-v1"
+DEFAULT_AVATAR_PROMPT = (
+    "Professional presenter headshot, friendly confident expression, looking "
+    "directly at camera, centered face and shoulders, plain neutral studio "
+    "background, soft even lighting, photorealistic. Suitable as the source "
+    "image for an image-to-video talking-head generator."
+)
 LANGUAGE_BOOSTS = {
     "en": "English",
     "es": "Spanish",
@@ -190,6 +199,17 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
         type=int,
     )
     parser.add_argument(
+        "--avatar-image-size",
+        default=os.environ.get("FAL_AVATAR_IMAGE_SIZE", "landscape_16_9"),
+        help="image_size for the talking-head avatar image (veed/fabric-1.0 input).",
+    )
+    parser.add_argument(
+        "--video-resolution",
+        choices=("720p", "480p"),
+        default=os.environ.get("FAL_VIDEO_RESOLUTION", "720p"),
+        help="resolution passed to veed/fabric-1.0 for the talking-head intro video.",
+    )
+    parser.add_argument(
         "--max-workers",
         default=int(os.environ.get("FAL_MAX_WORKERS", "0")),
         type=int,
@@ -267,10 +287,38 @@ def run_agent(
         if lesson.get("intro")
         else None
     )
+    avatar_payload = (
+        build_avatar_image_payload(
+            image_size=args.avatar_image_size,
+            image_steps=args.image_steps,
+        )
+        if lesson.get("intro")
+        else None
+    )
+    video_request_payload = (
+        {
+            "run_id": run_id,
+            "endpoint": TALKING_HEAD_VIDEO_ENDPOINT,
+            "resolution": args.video_resolution,
+            # image_url/audio_url are null here: they are only known once the
+            # avatar image and intro audio jobs below have completed.
+            "payload": {
+                "image_url": None,
+                "audio_url": None,
+                "resolution": args.video_resolution,
+            },
+        }
+        if lesson.get("intro")
+        else None
+    )
     write_json(paths.content_dir / "slide-image-prompts.json", slide_payloads)
     write_json(paths.content_dir / "voiceover-payload.json", voice_payload)
     if intro_payload is not None:
         write_json(paths.content_dir / "talking-head-intro-audio-payload.json", intro_payload)
+    if avatar_payload is not None:
+        write_json(paths.content_dir / "talking-head-avatar-payload.json", avatar_payload)
+    if video_request_payload is not None:
+        write_json(paths.content_dir / "talking-head-video-payload.json", video_request_payload)
 
     if args.mode != "dry-run":
         if preflight:
@@ -289,11 +337,16 @@ def run_agent(
     # count starves the last submissions: at the old default of 7 the six slides
     # and the voiceover filled the pool and the intro-audio job sat unsubmitted
     # until a slide finished, adding its full latency to the stage.
-    audio_jobs = 1 + (1 if intro_payload is not None else 0)
-    total_jobs = len(slide_payloads) + audio_jobs
+    extra_jobs = 1  # voiceover
+    if intro_payload is not None:
+        extra_jobs += 1  # intro audio
+    if avatar_payload is not None:
+        extra_jobs += 1  # talking-head avatar image
+    total_jobs = len(slide_payloads) + extra_jobs
     max_workers = args.max_workers if args.max_workers > 0 else total_jobs
     max_workers = max(1, min(max_workers, total_jobs))
-    image_workers = min(max(1, max_workers - audio_jobs), max(1, len(slide_payloads)))
+    image_workers = min(max(1, max_workers - extra_jobs), max(1, len(slide_payloads)))
+    talking_head_video_asset = None
     if args.mode == "dry-run":
         slide_assets = [
             dry_run_image_asset(item, paths)
@@ -301,6 +354,7 @@ def run_agent(
         ]
         voice_asset = dry_run_voice_asset(paths)
         intro_audio_asset = dry_run_intro_audio_asset(paths) if intro_payload is not None else None
+        avatar_asset = dry_run_avatar_asset(paths) if avatar_payload is not None else None
     else:
         assert client is not None
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -338,6 +392,18 @@ def run_agent(
                 if intro_payload is not None
                 else None
             )
+            avatar_future = (
+                executor.submit(
+                    generate_avatar_image,
+                    client,
+                    avatar_payload,
+                    paths,
+                    args.poll_interval_seconds,
+                    args.timeout_seconds,
+                )
+                if avatar_payload is not None
+                else None
+            )
             for payload in remaining_payloads:
                 done, active = concurrent.futures.wait(
                     active,
@@ -359,8 +425,31 @@ def run_agent(
                 slide_assets.append(future.result())
             voice_asset = voice_future.result()
             intro_audio_asset = intro_future.result() if intro_future is not None else None
+            avatar_asset = avatar_future.result() if avatar_future is not None else None
 
         slide_assets.sort(key=lambda item: item["slide_id"])
+
+        # The talking-head video depends on both the avatar image and the
+        # intro audio it lip-syncs to, so it can only start once those two
+        # (independent) jobs above have both finished — it is not part of the
+        # thread pool's fan-out.
+        if intro_payload is not None:
+            intro_audio_source_url = intro_audio_asset.pop("source_url", None)
+            avatar_source_url = avatar_asset.pop("source_url", None)
+            if not intro_audio_source_url or not avatar_source_url:
+                raise AgentError(
+                    "talking-head video generation requires both the intro audio "
+                    "and avatar image source URLs"
+                )
+            talking_head_video_asset = generate_talking_head_video(
+                client,
+                image_url=avatar_source_url,
+                audio_url=intro_audio_source_url,
+                resolution=args.video_resolution,
+                paths=paths,
+                poll_interval_seconds=args.poll_interval_seconds,
+                timeout_seconds=args.timeout_seconds,
+            )
 
     timings = estimate_timings(lesson)
     timings_path = paths.content_dir / "narration-timings.json"
@@ -372,6 +461,8 @@ def run_agent(
         slide_assets=slide_assets,
         voice_asset=voice_asset,
         intro_audio_asset=intro_audio_asset,
+        avatar_asset=avatar_asset,
+        talking_head_video_asset=talking_head_video_asset,
         timings=timings,
     )
     write_json(paths.manifest_path, manifest)
@@ -683,6 +774,31 @@ def build_intro_audio_payload(
     }
 
 
+def build_avatar_image_payload(*, image_size: str, image_steps: int) -> dict[str, Any]:
+    """Payload for the talking-head presenter avatar image, the `image_url`
+    input to `veed/fabric-1.0`. Uses a fixed seed independent of run_id so the
+    same presenter appears across runs, matching the fixed default
+    character/voice this stage used under the old VEED Fabric MCP flow.
+    """
+    provider_payload = {
+        "prompt": DEFAULT_AVATAR_PROMPT,
+        "image_size": image_size,
+        "num_inference_steps": image_steps,
+        "sync_mode": False,
+        "num_images": 1,
+        "enable_safety_checker": True,
+        "output_format": "png",
+        "acceleration": "regular",
+        "enable_prompt_expansion": False,
+        "seed": stable_seed(DEFAULT_AVATAR_SEED_KEY, "avatar"),
+    }
+    return {
+        "endpoint": AVATAR_IMAGE_ENDPOINT,
+        "prompt": DEFAULT_AVATAR_PROMPT,
+        "payload": provider_payload,
+    }
+
+
 def language_boost(language: str) -> str:
     """Map an ISO language code to a MiniMax `language_boost` value."""
     return LANGUAGE_BOOSTS.get(language.strip().lower(), "auto")
@@ -727,6 +843,18 @@ def dry_run_intro_audio_asset(paths: Paths) -> dict[str, Any]:
         "media_type": "audio/mpeg",
         "provider": "fal.ai",
         "provider_job_id": "dry-run-intro-audio",
+        "metadata_path": relative_path(paths.run_root, metadata_path),
+    }
+
+
+def dry_run_avatar_asset(paths: Paths) -> dict[str, Any]:
+    metadata_path = paths.provider_dir / "talking-head-avatar-dry-run.json"
+    write_json(metadata_path, {"mode": "dry-run", "provider": "fal.ai", "endpoint": AVATAR_IMAGE_ENDPOINT})
+    return {
+        "path": relative_path(paths.run_root, paths.content_dir / "talking-head-avatar.png"),
+        "media_type": "image/png",
+        "provider": "fal.ai",
+        "provider_job_id": "dry-run-avatar",
         "metadata_path": relative_path(paths.run_root, metadata_path),
     }
 
@@ -813,6 +941,84 @@ def generate_intro_audio(
         "metadata_path": relative_path(
             paths.run_root, paths.provider_dir / "talking-head-intro-audio-response.json"
         ),
+        # Consumed by run_agent to feed veed/fabric-1.0's audio_url input, then
+        # popped before this dict is written into asset-manifest.json — fal's
+        # hosted URLs carry a signed token and must not be persisted to disk.
+        "source_url": audio_url,
+    }
+
+
+def generate_avatar_image(
+    client: FalQueueClient,
+    item: dict[str, Any],
+    paths: Paths,
+    poll_interval_seconds: float,
+    timeout_seconds: int,
+) -> dict[str, Any]:
+    request = client.submit(item["endpoint"], item["payload"])
+    request_id = require_request_id(request, "talking-head-avatar")
+    write_json(paths.provider_dir / "talking-head-avatar-submit.json", sanitize_provider_json(request))
+    result = wait_for_result(client, request, poll_interval_seconds, timeout_seconds)
+    write_json(paths.provider_dir / "talking-head-avatar-response.json", sanitize_provider_json(result))
+    data = unwrap_result_data(result)
+    image_url = data.get("images", [{}])[0].get("url")
+    if not image_url:
+        raise AgentError("talking-head avatar response did not include images[0].url")
+    output_path = paths.content_dir / "talking-head-avatar.png"
+    client.download(image_url, output_path)
+    return {
+        "path": relative_path(paths.run_root, output_path),
+        "media_type": "image/png",
+        "provider": "fal.ai",
+        "provider_job_id": request_id,
+        "metadata_path": relative_path(
+            paths.run_root, paths.provider_dir / "talking-head-avatar-response.json"
+        ),
+        # See the matching note on generate_intro_audio's source_url.
+        "source_url": image_url,
+    }
+
+
+def generate_talking_head_video(
+    client: FalQueueClient,
+    *,
+    image_url: str,
+    audio_url: str,
+    resolution: str,
+    paths: Paths,
+    poll_interval_seconds: float,
+    timeout_seconds: int,
+) -> dict[str, Any]:
+    payload = {"image_url": image_url, "audio_url": audio_url, "resolution": resolution}
+    request = client.submit(TALKING_HEAD_VIDEO_ENDPOINT, payload)
+    request_id = require_request_id(request, "talking-head-video")
+    write_json(paths.provider_dir / "talking-head-video-submit.json", sanitize_provider_json(request))
+    result = wait_for_result(client, request, poll_interval_seconds, timeout_seconds)
+    write_json(paths.provider_dir / "talking-head-video-response.json", sanitize_provider_json(result))
+    data = unwrap_result_data(result)
+    video_url = data.get("video", {}).get("url")
+    if not video_url:
+        raise AgentError("talking-head video response did not include video.url")
+    output_path = paths.content_dir / "talking-head-intro.mp4"
+    client.download(video_url, output_path)
+    metadata_path = paths.content_dir / "talking-head-metadata.json"
+    write_json(
+        metadata_path,
+        {
+            "provider": "fal.ai",
+            "endpoint": TALKING_HEAD_VIDEO_ENDPOINT,
+            "resolution": resolution,
+            "job_id": request_id,
+            "output_path": relative_path(paths.run_root, output_path),
+            "status": "completed",
+        },
+    )
+    return {
+        "path": relative_path(paths.run_root, output_path),
+        "media_type": "video/mp4",
+        "provider": "fal.ai",
+        "provider_job_id": request_id,
+        "metadata_path": relative_path(paths.run_root, metadata_path),
     }
 
 
@@ -876,21 +1082,28 @@ def build_asset_manifest(
     slide_assets: list[dict[str, Any]],
     voice_asset: dict[str, Any],
     intro_audio_asset: dict[str, Any] | None,
+    avatar_asset: dict[str, Any] | None = None,
+    talking_head_video_asset: dict[str, Any] | None = None,
     timings: list[dict[str, float | str]],
 ) -> dict[str, Any]:
+    # Populated by this same script's veed/fabric-1.0 call once the avatar
+    # image and intro audio it depends on have both completed. Stays a
+    # "pending" placeholder in dry-run and when the lesson script has no
+    # intro at all.
+    talking_head_intro = talking_head_video_asset or {
+        "path": "02-content-generation/talking-head-intro.mp4",
+        "media_type": "video/mp4",
+        "provider": "pending",
+    }
     assets: dict[str, Any] = {
-        # Filled in by the veed-talking-head skill once the VEED Fabric MCP
-        # video call completes; see codex/skills/veed-talking-head.
-        "talking_head_intro": {
-            "path": "02-content-generation/talking-head-intro.mp4",
-            "media_type": "video/mp4",
-            "provider": "pending",
-        },
+        "talking_head_intro": talking_head_intro,
         "slide_images": slide_assets,
         "voiceover": voice_asset,
     }
     if intro_audio_asset is not None:
         assets["talking_head_intro_audio"] = intro_audio_asset
+    if avatar_asset is not None:
+        assets["talking_head_avatar"] = avatar_asset
     return {
         "run_id": run_id,
         "lesson_script": lesson_script_path.name,

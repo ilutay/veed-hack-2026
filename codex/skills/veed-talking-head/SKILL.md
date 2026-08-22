@@ -1,6 +1,6 @@
 ---
 name: veed-talking-head
-description: Prepare or run the Veed.io talking-head intro generation stage for an educational video workflow.
+description: Prepare or run the talking-head intro generation stage for an educational video workflow, using fal's veed/fabric-1.0 model.
 ---
 
 # Veed Talking Head
@@ -10,80 +10,67 @@ Use this skill for the short presenter intro generated from
 15-second lesson format normally omits it — skip this skill entirely when
 `lesson-script.json` has no `intro` field.
 
-Start this skill's MCP tool sequence in parallel with the
-`fal_media_agent.py` content-generation run (slide images + voiceover), not
-after it finishes — the VEED render alone takes 1-2 minutes, and neither
-stage depends on the other's output. See "Content Generation Concurrency" in
-`../educational-video-workflow/references/workflow-contract.md`.
+This stage now runs entirely through **fal**, in the same
+`codex/tools/fal_media_agent.py` invocation used for slide images and
+voiceover — there is nothing separate to drive turn-by-turn. See "Content
+Generation Concurrency" in
+`../educational-video-workflow/references/workflow-contract.md` for how this
+stage fits alongside the slide/voiceover branch.
 
-The stage has two parts, run through two different providers:
+The stage has three fal requests, all handled by `fal_media_agent.py`:
 
-1. **Intro audio (fal)** — already produced for you by
-   `codex/tools/fal_media_agent.py` in the same `content_generation` pass that
-   makes the slide images and voiceover. Nothing to do here except read the
-   result; see [Output](#output).
-2. **Intro video (VEED Fabric MCP)** — this skill's actual job. Call the
-   `veed-fabric` MCP server's tools to turn the intro script into
-   `talking-head-intro.mp4`, using a VEED stock avatar and VEED's own voice —
-   **not** the fal audio clip. See [Behavior](#behavior) for why.
+1. **Intro audio** (`fal-ai/minimax/speech-2.6-turbo`) — the line the avatar
+   will speak, timed and previewable independent of the video render.
+2. **Presenter avatar image** (`fal-ai/z-image/turbo`) — a fixed-seed
+   headshot, reused across runs so the presenter looks the same every time
+   (see [Default avatar](#default-avatar)).
+3. **Talking-head video** (`veed/fabric-1.0`) — turns the avatar image plus
+   the intro audio into `talking-head-intro.mp4`. This is an
+   image+audio→video model: it lip-syncs the avatar to the given audio clip
+   rather than doing its own text-to-speech, so it depends on both of the
+   requests above completing first.
 
 ## Behavior
 
 - Read `lesson_script.intro.talking_head_script` (the line an avatar should
   speak) and, if present, `lesson_script.intro.hook` for tone.
-- In `dry-run`, do not call the `veed-fabric` MCP server at all. Emit the
-  intended tool-call sequence and arguments (see the contract) as a JSON
-  payload plus placeholder asset metadata.
-- In `test` or `live`, use the default character and voice below —
-  `character_id: "character-19"`, `voice_id: "en-CA-LiamNeural"` — instead of
-  prompting a human through `list_characters`/`list_voices` each run. Skip
-  straight to `confirm_fabric_video` with these ids unless the work order (or
-  a user, mid-conversation) names a different character/voice, in which case
-  use `list_characters`/`list_voices` to resolve that request instead. Do not
-  skip `confirm_fabric_video` even with the default — it is still the only
-  place the cost is shown before credits are spent, so still get explicit
-  confirmation of the estimate before calling `create_fabric_video`. Then
-  drive `create_fabric_video` → `get_generation_status`, polling until
-  `completed` or `error`.
-- Download the resulting video URL to `talking-head-intro.mp4` and write
-  `talking-head-metadata.json` with the job id, chosen character/voice, and
-  credit cost.
-- Update `asset-manifest.json`: replace the `talking_head_intro` entry's
-  `provider: "pending"` placeholder with the real path and provider metadata.
-  Do not touch `talking_head_intro_audio` — that entry belongs to the fal
-  stage.
-- Do not hide MCP errors (insufficient credits, generation failure, empty
-  voice locale). Report them; do not silently fall back to a placeholder.
+- In `dry-run`, do not call fal. `fal_media_agent.py` still emits the intended
+  avatar-image and video request payloads (with `image_url`/`audio_url` left
+  `null`, since nothing has actually been generated) as
+  `talking-head-avatar-payload.json` and `talking-head-video-payload.json`.
+- In `test` or `live`, `fal_media_agent.py` submits the avatar image and
+  intro audio jobs in parallel with the slide images and voiceover, waits for
+  both to complete, then submits the `veed/fabric-1.0` job with their fal
+  URLs and polls it to completion.
+- Download the resulting video to `talking-head-intro.mp4` and write
+  `talking-head-metadata.json` with the job id, resolution, and output path.
+- `asset-manifest.json`'s `talking_head_intro` entry is filled in directly by
+  `fal_media_agent.py` once the video completes — no separate skill needs to
+  patch it afterward. It only stays a `provider: "pending"` placeholder in
+  `dry-run` or when `intro` is absent.
+- Do not hide provider errors (failed generation, missing URLs in a
+  response). Report them; do not silently fall back to a placeholder.
 
-## Why two providers for one clip
+## Default avatar
 
-The VEED Fabric MCP server (`https://www.veed.io/api/v1/mcp`) generates video
-from `script + voiceId + characterId` — it does its own text-to-speech with a
-VEED stock avatar and has no parameter for supplying a pre-rendered audio
-file. It is a different product surface from the `veed/fabric-1.0` fal
-endpoint (image + audio → video), which this skill does **not** use.
-
-So the fal-generated `talking-head-intro-audio.mp3` is not fed into the MCP
-call. It exists as: a fast, credential-light way to hear and time the intro
-line before spending VEED credits, and a fallback artifact if the MCP call is
-unavailable. Keep both artifacts in the manifest; do not delete the fal audio
-once the video exists.
+`fal_media_agent.py` generates the avatar image with a fixed prompt and a
+seed derived from a constant key (not the run id), so the same presenter
+appears across runs instead of a new face each time — the fal equivalent of
+the old fixed `character-19` default. To use a different look for a specific
+run, change `DEFAULT_AVATAR_PROMPT` / `DEFAULT_AVATAR_SEED_KEY` in
+`codex/tools/fal_media_agent.py`, or swap in a pre-made image by editing
+`build_avatar_image_payload` to point at a fixed `image_url` instead of
+generating one.
 
 ## Output
 
-- `talking-head-intro-audio.mp3` — fal-generated, produced upstream by
-  `fal_media_agent.py`. Registered as `assets.talking_head_intro_audio`.
-- `talking-head-intro.mp4` — this skill's output (or a placeholder path in
-  `dry-run`). Registered as `assets.talking_head_intro`.
-- `talking-head-metadata.json` — provider, MCP tool-call sequence, job id,
-  chosen character/voice ids, credit cost, and output path.
+- `talking-head-intro-audio.mp3` — registered as `assets.talking_head_intro_audio`.
+- `talking-head-avatar.png` — the presenter image fed into `veed/fabric-1.0`,
+  registered as `assets.talking_head_avatar`.
+- `talking-head-intro.mp4` — this stage's final output (or a placeholder path
+  in `dry-run`). Registered as `assets.talking_head_intro`.
+- `talking-head-metadata.json` — provider, endpoint, job id, resolution, and
+  output path for the video request.
 
-## MCP setup
-
-The `veed-fabric` MCP server is pre-wired in this repo — `.mcp.json` for
-Claude Code, `.codex/config.toml` for Codex CLI — and needs a one-time OAuth
-login per developer, not an API key. See "MCP servers" in `AGENTS.md` before
-running this skill in `test` or `live` mode.
-
-Read `references/veed-contract.md` for the exact tool names, arguments, and
-metadata fields.
+Read `references/veed-contract.md` for the exact request/response shape of
+`veed/fabric-1.0`.

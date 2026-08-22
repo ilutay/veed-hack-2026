@@ -15,7 +15,11 @@
       "properties": {
         "talking_head_intro": { "$ref": "#/$defs/asset" },
         "talking_head_intro_audio": {
-          "description": "fal-generated short intro voiceover clip. Reference audio for the VEED Fabric MCP video call and for timing/script review; not itself embedded in talking_head_intro. Present only when the lesson script has an intro.",
+          "description": "fal-generated short intro voiceover clip. Its URL is the audio_url input to the veed/fabric-1.0 call that produces talking_head_intro. Present only when the lesson script has an intro.",
+          "$ref": "#/$defs/asset"
+        },
+        "talking_head_avatar": {
+          "description": "fal-generated presenter avatar image. Its URL is the image_url input to the veed/fabric-1.0 call that produces talking_head_intro. Present only when the lesson script has an intro.",
           "$ref": "#/$defs/asset"
         },
         "voiceover": { "$ref": "#/$defs/asset" },

@@ -18,30 +18,19 @@ Use this skill when the user wants to generate or iterate on the full educationa
    "Latency Budget".
 3. Run `topic_research` to produce `research-brief.json`.
 4. Use the research-script stage to turn that brief into `lesson-script.json`. Do not do new web research.
-5. The instant `lesson-script.json` exists, launch content generation as two
-   parallel subagents in the same response — never run one to completion
-   before starting the other. Each subagent's wall-clock time (slide images +
-   voiceover on one side, the ~1-2 minute VEED Fabric MCP render on the
-   other) is comparable; chaining them roughly doubles this stage's total
-   time for no benefit, since neither reads the other's output:
-   - Subagent A: `codex/tools/fal_media_agent.py` (slide images, voiceover,
-     and the fal intro-audio clip) — a single script invocation covering all
-     three fal-backed assets, already parallelized internally across a
-     thread pool. Give this subagent the lesson-script path and run-id and
-     let it report back when the process exits.
-   - Subagent B (or the orchestrating agent itself, since it already holds
-     the MCP connection): the talking-head intro video through the
-     `veed-talking-head` skill — an agent-driven MCP tool sequence
-     (`confirm_fabric_video` → `create_fabric_video` → poll
-     `get_generation_status`). Start this in the same turn you launch
-     Subagent A, not after it returns.
-   See `references/workflow-contract.md` for the concurrency requirement and
-   why blocking on Subagent A before starting the VEED sequence roughly
-   doubles the stage's time.
-   Only proceed to step 6 once both report back. When the run has a
-   wall-clock target, drop Subagent B: a VEED render takes 1-2 minutes on its
-   own, so omit `intro` from the lesson script (the contract makes it
-   optional and the stage is skipped when absent).
+5. The instant `lesson-script.json` exists, run content generation via
+   `codex/tools/fal_media_agent.py` (slide images, voiceover, and — when
+   `intro` is present — the intro-audio clip, the presenter avatar image, and
+   the `veed/fabric-1.0` talking-head video). It's a single script
+   invocation covering every fal-backed asset for this stage, already
+   parallelized internally across a thread pool; give it the lesson-script
+   path and run-id and let it report back when the process exits. There is
+   no separate MCP tool sequence to drive anymore — see
+   `references/workflow-contract.md`.
+   When the run has a wall-clock target, omit `intro` from the lesson script
+   (the contract makes it optional and the stage is skipped when absent):
+   the talking-head video's avatar-image and intro-audio dependencies still
+   make it the slowest asset in this stage by far.
 6. Assemble the final webpage from validated contracts and media assets. This is the last stage — there is no separate QA pass; validate paths and contracts inline as each stage's output is consumed, and surface any gap immediately rather than deferring it to a report.
 
 ## Contracts

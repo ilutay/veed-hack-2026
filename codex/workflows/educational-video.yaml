@@ -1,5 +1,5 @@
 name: educational-video
-description: Generate educational video content from a topic using Codex skills, subagents, APIs, and MCP tools.
+description: Generate educational video content from a topic using Codex skills, subagents, and fal.ai APIs.
 version: 0.1.0
 
 inputs:
@@ -54,12 +54,13 @@ stages:
     depends_on:
       - research_script
     concurrency: >
-      Launch every branch below in the same turn lesson_script.json is
-      written, each as its own subagent (Agent tool) — never run one branch
-      to completion before starting another. talking_head_intro in
-      particular is the long pole (VEED render, ~1-2 min); starting it after
-      the fal branch finishes roughly doubles this stage's wall-clock time
-      for no benefit, since no branch reads another's output. See
+      talking_head_intro, slide_images, and voiceover_video are all produced
+      by codex/tools/fal_media_agent.py in one invocation, already
+      parallelized internally across a thread pool. talking_head_intro is
+      still the long pole in that stage (its veed/fabric-1.0 video request
+      waits on the avatar image and intro audio jobs first), but that
+      dependency is handled inside the script, not by the orchestrating
+      agent. See
       ../skills/educational-video-workflow/references/workflow-contract.md.
     branches:
       - id: talking_head_intro
@@ -67,6 +68,7 @@ stages:
         skill: ../skills/veed-talking-head
         output:
           - talking-head-intro-audio.mp3
+          - talking-head-avatar.png
           - talking-head-intro.mp4
           - talking-head-metadata.json
       - id: slide_images

@@ -33,15 +33,14 @@ each stage without pausing to double-check or re-verify prior output:**
    `codex/skills/topic-research`) to produce `research-brief.json`.
 3. Run the `research_script` stage (`codex/subagents/research-script-agent.md` +
    `codex/skills/topic-research-script`) to produce `lesson-script.json`. Do not redo web research.
-4. The instant `lesson-script.json` exists, launch content generation as parallel subagents in the
-   SAME turn — never run one to completion before starting the next:
-   - `talking_head_intro` (`codex/subagents/talking-head-agent.md` + `codex/skills/veed-talking-head`,
-     via the VEED Fabric MCP tools) — skip this branch entirely when the run has a tight wall-clock
-     target (it's a 1-2 min render and the lesson script contract makes `intro` optional).
-   - `slide_images` (`codex/subagents/slide-image-agent.md` + `codex/skills/slide-image-generation`)
-   - `voiceover_video` (`codex/subagents/voiceover-agent.md` + `codex/skills/voiceover-video-generation`)
-   Prefer using `codex/tools/fal_media_agent.py` for the fal-backed assets (slides + voiceover +
-   intro audio) as a single subagent invocation, per the SKILL.md guidance.
+4. The instant `lesson-script.json` exists, run content generation via `codex/tools/fal_media_agent.py`
+   (`codex/subagents/talking-head-agent.md` + `codex/skills/veed-talking-head` for the talking-head
+   branch, `codex/subagents/slide-image-agent.md` + `codex/skills/slide-image-generation` for slides,
+   `codex/subagents/voiceover-agent.md` + `codex/skills/voiceover-video-generation` for voiceover) —
+   a single script invocation covers every fal-backed asset (slides, voiceover, intro audio, the
+   presenter avatar image, and the `veed/fabric-1.0` talking-head video), already parallelized
+   internally, per the SKILL.md guidance. Skip the talking-head branch entirely when the run has a
+   tight wall-clock target — it's the long pole and the lesson script contract makes `intro` optional.
 5. Once every branch reports back, run `assemble_webpage`
    (`codex/subagents/page-assembly-agent.md` + `codex/skills/learning-page-assembly`) to produce
    `index.html` under the run's output directory. Do not add a QA, review, or verification pass —
