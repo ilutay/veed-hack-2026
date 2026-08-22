@@ -71,7 +71,7 @@ export function useCodexAction(): CodexActionContextValue {
   if (!ctx) {
     throw new Error(
       "useCodexAction must be used inside a CodexActionProvider. " +
-        "Gym components emit interactions through Codex, not Tambo threads.",
+        "Gym components emit interactions through the Codex action boundary.",
     );
   }
   return ctx;

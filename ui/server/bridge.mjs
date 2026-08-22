@@ -715,6 +715,7 @@ async function handleTurn(res, body) {
     }
     const curriculumContext = isGymTurn ? parseStudioCurriculumContext(curriculum) : null;
     const pioneerReceipt = curriculumContext ? await requestPioneerCurriculum(curriculumContext) : null;
+    const expectedComponent = pioneerReceipt ? expectedCurriculumComponent(pioneerReceipt) : null;
     const curriculumState = pioneerReceipt
       ? `${state}\n\n${pioneerReceipt.mode === "live" ? "Live Pioneer" : "Dry-run"} curriculum decision: ${JSON.stringify({
           selectedMoveId: pioneerReceipt.selectedMoveId,
@@ -723,9 +724,11 @@ async function handleTurn(res, body) {
           reason: pioneerReceipt.reason,
         })}`
       : state;
-    const command = await runCodexTurn(learnerState(slug, curriculumState));
-    if (pioneerReceipt) {
-      const expectedComponent = expectedCurriculumComponent(pioneerReceipt);
+    const codexState = expectedComponent
+      ? `Active gym turn. Onboarding is bypassed for this turn. Required componentName: ${expectedComponent}. Do not choose an onboarding, profile, lesson, chat, or library component.\n\n${curriculumState}`
+      : learnerState(slug, curriculumState);
+    const command = await runCodexTurn(codexState);
+    if (expectedComponent) {
       if (command.componentName !== expectedComponent) {
         throw new Error(`Codex returned ${command.componentName}; curriculum requires ${expectedComponent}`);
       }

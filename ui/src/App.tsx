@@ -101,6 +101,7 @@ function Studio() {
   const turn = useRef(0);
   const activeSurface = useRef<HTMLElement | null>(null);
   const surfaceVersion = useRef(0);
+  const pendingRequests = useRef(0);
   const practiceContext = useRef<{ jobId?: string; topic: string } | null>(null);
   /** jobId -> the topic that produced it, so a retry or a follow-up knows it. */
   const topics = useRef(new Map<string, string>());
@@ -164,13 +165,17 @@ function Studio() {
 
   const startLesson = useCallback(
     async (topic: string) => {
+      const requestGeneration = ++surfaceVersion.current;
+      setActiveBlock(null);
+      setCurrentJobId(undefined);
+      practiceContext.current = null;
+      pendingRequests.current += 1;
       setBusy(true);
       setError(null);
       const turnId = nextTurnId();
       try {
         const job = await startLessonRender({ topic, episodeId: EPISODE_ID, turnId, slug: latest()?.slug });
         topics.current.set(job.jobId, topic);
-        setCurrentJobId(job.jobId);
         upsertLibrary({
           jobId: job.jobId,
           topic,
@@ -178,6 +183,10 @@ function Studio() {
           status: "pending",
           createdAt: new Date().toISOString(),
         });
+        // The lesson still belongs in the library, but a newer learner action
+        // owns the active page and must not be overwritten by this response.
+        if (surfaceVersion.current !== requestGeneration) return;
+        setCurrentJobId(job.jobId);
         activateBlock(
           {
             // Ids are ours. The model never names its own render target, and
@@ -191,9 +200,12 @@ function Studio() {
           `Rendering a lesson on "${topic}". It plays here as soon as the video lands.`,
         );
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
+        if (surfaceVersion.current === requestGeneration) {
+          setError(err instanceof Error ? err.message : String(err));
+        }
       } finally {
-        setBusy(false);
+        pendingRequests.current = Math.max(0, pendingRequests.current - 1);
+        setBusy(pendingRequests.current > 0);
       }
     },
     [activateBlock, upsertLibrary, latest],
@@ -208,8 +220,9 @@ function Studio() {
     ) => {
       const normalizedTopic = topic.trim() || "the current lesson";
       if (!event) practiceContext.current = { topic: normalizedTopic };
-      const expectedSurfaceVersion = surfaceVersion.current;
+      const requestGeneration = ++surfaceVersion.current;
       const turnId = nextTurnId();
+      pendingRequests.current += 1;
       setBusy(true);
       setError(null);
       try {
@@ -231,12 +244,15 @@ function Studio() {
         });
         // A newer side-chat command owns the page. Do not let an older tutor
         // response arrive later and replace what the learner just requested.
-        if (surfaceVersion.current !== expectedSurfaceVersion) return;
+        if (surfaceVersion.current !== requestGeneration) return;
         activateBlock(command);
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
+        if (surfaceVersion.current === requestGeneration) {
+          setError(err instanceof Error ? err.message : String(err));
+        }
       } finally {
-        setBusy(false);
+        pendingRequests.current = Math.max(0, pendingRequests.current - 1);
+        setBusy(pendingRequests.current > 0);
       }
     },
     [activateBlock, latest],
@@ -262,11 +278,16 @@ function Studio() {
     } else if (pageAction.kind === "render_block") {
       activateBlock(pageAction.command);
     } else {
-      append({
-        id: crypto.randomUUID(),
-        role: "assistant",
-        text: pageAction.summary,
-      });
+      activateBlock(
+        {
+          componentId: crypto.randomUUID(),
+          componentName: "AgentNote",
+          props: { text: pageAction.summary },
+          episodeId: EPISODE_ID,
+          turnId: nextTurnId(),
+        },
+        pageAction.summary,
+      );
     }
     consumePageAction();
   }, [activateBlock, append, consumePageAction, pageAction, requestPractice, startLesson]);
@@ -423,6 +444,7 @@ function Studio() {
                   className="btn"
                   data-testid="sign-out"
                   onClick={() => {
+                    surfaceVersion.current += 1;
                     signOut();
                     setMessages([]);
                     setCurrentJobId(undefined);
@@ -444,12 +466,10 @@ function Studio() {
           </p>
         )}
 
-        <AssetLibrary onSelect={openFromLibrary} currentJobId={currentJobId} />
-
         {activeBlock ? (
           <section
             ref={activeSurface}
-            className="snap"
+            className="snap active-page-surface"
             data-testid="active-page-surface"
             aria-label="Active learning surface"
             aria-live="polite"
@@ -467,6 +487,8 @@ function Studio() {
             {renderBlock(activeBlock)}
           </section>
         ) : null}
+
+        <AssetLibrary onSelect={openFromLibrary} currentJobId={currentJobId} />
 
         <div className="studio-thread">
           <MessageThreadFull messages={messages} onSubmit={onSubmit} busy={busy} renderBlock={renderBlock} />

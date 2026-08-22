@@ -916,7 +916,10 @@ export function applyChatNudge(axes, message) {
     depth += 0.2;
     parts.push("go more technical");
   }
-  if (["example", "concrete", "practical", "real-world", "application"].some((p) => m.includes(p))) {
+  if (["fewer examples", "less examples", "fewer concrete", "less concrete"].some((p) => m.includes(p))) {
+    concreteness -= 0.2;
+    parts.push("use fewer examples");
+  } else if (["example", "concrete", "practical", "real-world", "application"].some((p) => m.includes(p))) {
     concreteness += 0.2;
     parts.push("lean on examples");
   }
@@ -924,9 +927,14 @@ export function applyChatNudge(axes, message) {
     concreteness -= 0.2;
     parts.push("start from the principles");
   }
+  if (["fewer visuals", "less visual", "too visual"].some((p) => m.includes(p))) {
+    parts.push("use fewer visuals");
+  } else if (["more visuals", "more visual", "show me visually"].some((p) => m.includes(p))) {
+    parts.push("use more visuals");
+  }
   const reply =
     parts.length === 0
-      ? "Noted. I'll keep that in mind for the next lesson."
+      ? "I'll remember that preference for the next lesson."
       : parts.length === 1
         ? `I'll ${parts[0]} on the next lesson.`
         : `I'll ${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]} on the next lesson.`;

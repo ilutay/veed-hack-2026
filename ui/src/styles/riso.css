@@ -1141,6 +1141,27 @@ section {
   border-radius: var(--radius-md);
 }
 
+.active-page-surface {
+  min-height: 40vh;
+  scroll-margin-top: 1rem;
+}
+
+.active-page-surface video {
+  display: block;
+  width: 100%;
+  max-height: 72vh;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  background: #000;
+  border-radius: var(--radius-md);
+}
+
+@media (min-width: 900px) {
+  .active-page-surface video {
+    width: min(100%, 50vw);
+  }
+}
+
 .studio-thread article[data-role="user"] p {
   font-family: var(--font-mono);
   color: var(--text-secondary);
