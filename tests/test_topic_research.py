@@ -116,7 +116,7 @@ class TopicResearchTests(unittest.TestCase):
             self.assertTrue((provider_dir / "extract-request.json").exists())
             request = json.loads((provider_dir / "ground_facts-request.json").read_text())
             self.assertEqual(request["payload"]["include_usage"], True)
-            self.assertEqual(request["payload"]["search_depth"], "advanced")
+            self.assertEqual(request["payload"]["search_depth"], "basic")
             self.assertEqual(request["payload"]["include_raw_content"], "markdown")
             extract_request = json.loads((provider_dir / "extract-request.json").read_text())
             self.assertEqual(extract_request["payload"]["include_usage"], True)

@@ -287,13 +287,13 @@ def build_search_payloads(topic: str) -> dict[str, dict[str, Any]]:
     return {
         "ground_facts": {
             "query": topic,
-            "search_depth": "advanced",
+            "search_depth": "basic",
             "include_raw_content": "markdown",
             "include_usage": True,
         },
         "strategy": {
             "query": f"how to teach {topic}, misconceptions about {topic}",
-            "search_depth": "advanced",
+            "search_depth": "basic",
             "include_usage": True,
         },
         "next_topics": {
@@ -400,7 +400,7 @@ def run_live_passes(
             timeout_seconds=timeout_seconds,
         )
 
-    expected = {"ground_facts": 2, "strategy": 2, "next_topics": 1, "extract": 1}
+    expected = {"ground_facts": 1, "strategy": 1, "next_topics": 1, "extract": 1}
     responses: dict[str, dict[str, Any]] = {}
     credits = 0
     for name, payload in search_payloads.items():
@@ -484,7 +484,7 @@ def map_tavily_to_brief(
         {
             "pass": name,
             "query": search_payloads[name]["query"] if name != "extract" else extract_query(responses),
-            "credits": 0 if mode != "live" else usage_credits(responses[name], 1 if name in {"next_topics", "extract"} else 2),
+            "credits": 0 if mode != "live" else usage_credits(responses[name], 1),
         }
         for name in ("ground_facts", "strategy", "next_topics", "extract")
     ]
@@ -595,7 +595,7 @@ def collect_facts(
     facts: list[dict[str, Any]] = []
     seen_claims: set[str] = set()
     # Extract first: fuller page text, then ground_facts snippets.
-    for pass_name, confidence in (("extract", "high"), ("ground_facts", "high"), ("strategy", "medium")):
+    for pass_name, confidence in (("extract", "high"), ("ground_facts", "medium"), ("strategy", "medium")):
         response = responses.get(pass_name) or {}
         for result in search_results(response):
             url = result.get("url")

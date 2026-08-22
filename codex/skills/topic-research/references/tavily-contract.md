@@ -17,10 +17,12 @@ Verified against https://docs.tavily.com/documentation/api-reference/endpoint/se
 
 | Pass           | Query                                                            | Body                                                      | Table credits |
 | -------------- | ---------------------------------------------------------------- | --------------------------------------------------------- | ------------- |
-| `ground_facts` | the topic                                                        | `search_depth: advanced`, `include_raw_content: markdown` | 2             |
-| `strategy`     | `how to teach {topic}, misconceptions about {topic}`             | `search_depth: advanced`                                  | 2             |
+| `ground_facts` | the topic                                                        | `search_depth: basic`, `include_raw_content: markdown`    | 1             |
+| `strategy`     | `how to teach {topic}, misconceptions about {topic}`             | `search_depth: basic`                                     | 1             |
 | `next_topics`  | `adjacent subtopics, prerequisites, and applications of {topic}` | `search_depth: basic`, `max_results: 20`                  | 1             |
 | `extract`      | top 5 URLs from pass 1                                           | `POST /extract` with `urls`                               | 1             |
+
+All three search passes use `search_depth: basic` (cheaper and faster than `advanced`, at the cost of shallower snippets). `extract` is a separate endpoint that fetches full page content regardless of search depth, so facts sourced from it stay `confidence: high`; facts sourced from the `ground_facts` search pass are `confidence: medium` to reflect the shallower search.
 
 ## Modes
 
