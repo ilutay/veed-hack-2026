@@ -2,7 +2,10 @@
 
 Pioneer Gym is an RL gym for humans: a learner types what they want to learn,
 does a short observable practice rep, sees the evidence, and then attempts a
-changed-action transfer challenge.
+changed-action transfer challenge. Pioneer certifies the teaching signal and
+picks the next eligible rep; Codex is the only execution agent; Tambo only
+renders registered components. The live demo trains visual hierarchy for
+short-form product video. Hackathon paste-copy lives in `HACKATHON.md`.
 
 The product has three deliberately separate authorities:
 
