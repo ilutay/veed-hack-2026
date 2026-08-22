@@ -3,11 +3,13 @@ import { ProbeArena } from "./components/ProbeArena";
 import { CreditAssignmentReplay } from "./components/CreditAssignmentReplay";
 import { TargetedRetryGym } from "./components/TargetedRetryGym";
 import { LayerOrderTransferGym } from "./components/LayerOrderTransferGym";
+import { LessonVideo } from "./components/LessonVideo";
 import {
   ProbeArenaSchema,
   CreditAssignmentReplaySchema,
   TargetedRetryGymSchema,
   LayerOrderTransferGymSchema,
+  LessonVideoSchema,
 } from "./schemas";
 
 /**
@@ -40,5 +42,12 @@ export const gymComponents: TamboComponent[] = [
     description: "Tests whether a learned ordering transfers to a new surface",
     component: LayerOrderTransferGym,
     propsSchema: LayerOrderTransferGymSchema,
+  },
+  {
+    name: "LessonVideo",
+    description:
+      "Plays a lesson video once the bridge finishes rendering it; show it after a lesson render is started, naming only the job id",
+    component: LessonVideo,
+    propsSchema: LessonVideoSchema,
   },
 ];

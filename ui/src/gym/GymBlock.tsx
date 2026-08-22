@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ComponentRenderer, type TamboComponentContent } from "@tambo-ai/react";
 import { CodexActionProvider, type CodexGymEvent } from "../codex/CodexActionProvider";
 import { GymRenderError } from "./components/GymRenderError";
+import { GymErrorBoundary } from "./GymErrorBoundary";
 
 /** The component command Codex sends after it calls Pioneer. */
 export interface CodexComponentCommand {
@@ -53,13 +54,14 @@ export function GymBlock({ command, onEvent, pending = null }: GymBlockProps) {
       onEvent={onEvent}
     >
       {ready ? (
-        <ComponentRenderer
-          key={block.id}
-          content={block}
-          threadId={command.episodeId}
-          messageId={command.turnId}
-          fallback={<GymRenderError />}
-        />
+        <GymErrorBoundary key={block.id} fallback={<GymRenderError />}>
+          <ComponentRenderer
+            content={block}
+            threadId={command.episodeId}
+            messageId={command.turnId}
+            fallback={<GymRenderError />}
+          />
+        </GymErrorBoundary>
       ) : (
         pending
       )}

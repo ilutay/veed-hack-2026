@@ -72,7 +72,17 @@ export const LayerOrderTransferGymSchema = z
   })
   .describe("Tests whether a learned ordering transfers to a new surface");
 
+export const LessonVideoSchema = z
+  .object({
+    jobId: z
+      .string()
+      .describe("Lesson render job id returned by the bridge; never invent one"),
+    title: z.string().describe("Lesson title shown above the player"),
+  })
+  .describe("A lesson video being rendered offline, polled until it is playable");
+
 export type ProbeArenaProps = z.infer<typeof ProbeArenaSchema>;
 export type CreditAssignmentReplayProps = z.infer<typeof CreditAssignmentReplaySchema>;
 export type TargetedRetryGymProps = z.infer<typeof TargetedRetryGymSchema>;
 export type LayerOrderTransferGymProps = z.infer<typeof LayerOrderTransferGymSchema>;
+export type LessonVideoProps = z.infer<typeof LessonVideoSchema>;

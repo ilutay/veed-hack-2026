@@ -9,7 +9,9 @@ import type { ProbeArenaProps } from "../schemas";
 export function ProbeArena({ probeId, prompt, choices, skill }: Partial<ProbeArenaProps>) {
   const { emit, episodeId, turnId } = useCodexAction();
 
-  if (!probeId || !prompt || !choices?.length) {
+  // Array.isArray, not .length: the renderer hands raw props through when schema
+  // validation fails, and a string satisfies .length before .map throws.
+  if (!probeId || !prompt || !Array.isArray(choices) || choices.length === 0) {
     return <div data-testid="probe-arena-pending">Loading probe…</div>;
   }
 

@@ -26,11 +26,13 @@ npm run bridge     # terminal 1 — codex bridge on 127.0.0.1:8787
 npm run dev        # terminal 2 — UI on 127.0.0.1:5173 (proxies /api to the bridge)
 ```
 
-Then open the UI: it asks Codex for an opening exercise, renders it through the
-registry, and sends each interaction back for the next one.
+Then open the UI: type a topic and it renders a lesson video for it. The gym
+loop is still there behind a `/gym ` prefix — that path asks Codex for an
+exercise, renders it through the registry, and sends each interaction back for
+the next one.
 
 ```bash
-npm test           # 14 tests, no network
+npm test           # 45 tests, no network
 npm run test:live  # opt-in: one real codex-cli turn, rendered end to end
 npm run typecheck
 npm run build
@@ -66,7 +68,24 @@ attacker-controlled. Anyone who finds port 8787 can bill you and run arbitrary
 prompts. Before it is exposed to anything wider than a tunnel it needs, at
 minimum, a shared secret, a per-IP rate limit, and a turn budget.
 
-### The loop, concretely
+### The lesson loop, concretely
+
+```
+browser  POST /api/lesson {topic}        -> 202 {jobId}   (renders in background)
+  -> App appends an assistant message carrying a LessonVideo block with that jobId
+  -> LessonVideo polls GET /api/lesson/{jobId} until status=completed
+  -> plays /media/lessons/{jobId}/03-video/lesson-video.mp4
+```
+
+The bridge mints both the job id and the media URL. Nothing model-authored
+reaches either, and `componentId` comes from `crypto.randomUUID()` in the app.
+Vite proxies `/media` as well as `/api`, so this still needs one tunnel.
+
+The render itself is fully offline: `local_media_agent.py` (PIL slides,
+espeak-ng voiceover) then `assemble_slideshow_video.py` (ffmpeg). Only the
+script-authoring stage calls codex.
+
+### The gym loop, concretely
 
 ```
 browser  POST /api/turn {state}
@@ -142,7 +161,10 @@ widens it to `0777` for the turn and removes it afterwards.
 | `src/gym/GymBlock.tsx` | Turns a Codex command into a `TamboComponentContent` and renders it. |
 | `src/codex/CodexActionProvider.tsx` | Our event channel back to Codex. |
 | `src/gym/components/` | The four gym surfaces + `GymRenderError`. |
-| `src/codex/client.ts` | Browser -> bridge call. The only network call the gym makes. |
+| `src/codex/client.ts` | Browser -> bridge call for a gym turn. |
+| `src/codex/lesson.ts` | Browser -> bridge call that starts a lesson render. |
+| `src/thread/MessageThreadFull.tsx` | The chat surface. Ours, not Tambo's — see the file header. |
+| `src/App.tsx` | Owns the transcript; turns a submitted topic into a LessonVideo block. |
 | `server/bridge.mjs` | Runs codex-cli turns; the only holder of the codex path. |
 | `scripts/emit-codex-schema.ts` | Generates the Codex output schema from the zod registry. |
 

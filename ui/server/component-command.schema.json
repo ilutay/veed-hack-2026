@@ -11,7 +11,8 @@
         "ProbeArena",
         "CreditAssignmentReplay",
         "TargetedRetryGym",
-        "LayerOrderTransferGym"
+        "LayerOrderTransferGym",
+        "LessonVideo"
       ]
     },
     "props": {
@@ -202,6 +203,25 @@
             "layers"
           ],
           "description": "Tests whether a learned ordering transfers to a new surface",
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "jobId": {
+              "type": "string",
+              "description": "Lesson render job id returned by the bridge; never invent one"
+            },
+            "title": {
+              "type": "string",
+              "description": "Lesson title shown above the player"
+            }
+          },
+          "required": [
+            "jobId",
+            "title"
+          ],
+          "description": "A lesson video being rendered offline, polled until it is playable",
           "additionalProperties": false
         }
       ]

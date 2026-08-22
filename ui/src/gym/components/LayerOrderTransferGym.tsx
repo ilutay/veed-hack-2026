@@ -11,7 +11,9 @@ export function LayerOrderTransferGym({
   // Ordering is local until submitted; Codex only hears the final sequence.
   const [order, setOrder] = useState<string[] | null>(null);
 
-  if (!taskId || !instruction || !layers?.length) {
+  // Array.isArray, not .length - see ProbeArena; raw props reach here on a
+  // schema-validation failure and a string would pass a truthy .length check.
+  if (!taskId || !instruction || !Array.isArray(layers) || layers.length === 0) {
     return <div data-testid="transfer-pending">Loading transfer task…</div>;
   }
 

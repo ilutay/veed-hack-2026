@@ -34,9 +34,34 @@ function renderBlock(
   );
 }
 
+/**
+ * Sample props per registered name. Keyed by name rather than listed, so a
+ * component added to the registry without a sample fails the coverage check
+ * below instead of quietly going untested.
+ */
+const sampleProps: Record<string, Record<string, unknown>> = {
+  ProbeArena: probeCommand.props,
+  CreditAssignmentReplay: {
+    probeId: "p1",
+    responseText: "abcdef",
+    spans: [],
+    score: 0.5,
+  },
+  TargetedRetryGym: { probeId: "p1", skill: "s", hint: "try again", attemptsRemaining: 2 },
+  LayerOrderTransferGym: {
+    taskId: "t1",
+    instruction: "Order these",
+    layers: [
+      { id: "l1", label: "One" },
+      { id: "l2", label: "Two" },
+    ],
+  },
+  LessonVideo: { jobId: "job-1", title: "Masking basics" },
+};
+
 describe("registry wiring", () => {
   it("registers every gym component with a name, description and schema", () => {
-    expect(gymComponents).toHaveLength(4);
+    expect(gymComponents.map((c) => c.name)).toEqual(Object.keys(sampleProps));
     for (const c of gymComponents) {
       expect(c.name).toBeTruthy();
       expect(c.description).toBeTruthy();
@@ -60,30 +85,15 @@ describe("registry wiring", () => {
   });
 
   it("renders every registered component without throwing", () => {
-    const commands: Array<[string, Record<string, unknown>]> = [
-      ["ProbeArena", probeCommand.props],
-      [
-        "CreditAssignmentReplay",
-        { probeId: "p1", responseText: "abcdef", spans: [], score: 0.5 },
-      ],
-      [
-        "TargetedRetryGym",
-        { probeId: "p1", skill: "s", hint: "try again", attemptsRemaining: 2 },
-      ],
-      [
-        "LayerOrderTransferGym",
-        {
-          taskId: "t1",
-          instruction: "Order these",
-          layers: [
-            { id: "l1", label: "One" },
-            { id: "l2", label: "Two" },
-          ],
-        },
-      ],
-    ];
+    // LessonVideo polls the bridge on mount; keep the poll answered and local.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ status: "running" }), { status: 200 })),
+    );
 
-    for (const [name, props] of commands) {
+    for (const { name } of gymComponents) {
+      const props = sampleProps[name];
+      expect(props, `no sample props for ${name}`).toBeDefined();
       const { unmount } = renderBlock({
         ...probeCommand,
         componentName: name,
@@ -92,6 +102,8 @@ describe("registry wiring", () => {
       expect(screen.queryByTestId("gym-render-error")).toBeNull();
       unmount();
     }
+
+    vi.unstubAllGlobals();
   });
 });
 
