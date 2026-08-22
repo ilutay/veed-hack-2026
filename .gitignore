@@ -7,9 +7,13 @@
 artifacts/
 
 # App
-/node_modules
+/node_modules/
 /.next/
-/dist
+/dist/
+/ops/teambox/dist/
+coverage/
+playwright-report/
+test-results/
 *.tsbuildinfo
 __pycache__/
 *.pyc
@@ -17,3 +21,4 @@ __pycache__/
 # OS / editor noise
 .DS_Store
 *.swp
+.gstack/

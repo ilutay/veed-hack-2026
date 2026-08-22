@@ -1,7 +1,7 @@
 # AGENTS.md
 
 How agents and humans handle API credentials in this repo. Read this before any
-stage that touches an external provider (fal.ai, Veed.io).
+stage that touches an external provider (fal.ai, Veed.io, Pioneer, or Codex).
 
 ## TL;DR
 
@@ -80,6 +80,7 @@ Rules that follow from this:
 
 ```bash
 WORKFLOW_MODE=live scripts/with-env.sh scripts/check-env.sh fal
+WORKFLOW_MODE=live scripts/with-env.sh scripts/check-env.sh pioneer codex
 ```
 
 Veed.io is not in this table — see [MCP servers](#mcp-servers) below. It
@@ -121,8 +122,10 @@ Current providers:
 
 | Provider | Variable | Stage | Auth header |
 | --- | --- | --- | --- |
-| fal.ai | `FAL_KEY` | `slide_images`, `voiceover_video`, `talking_head_intro` (intro audio) | `Authorization: Key $FAL_KEY` |
+| fal.ai | `FAL_KEY` | `slide_images`, `voiceover_video`, `talking_head_intro` (intro audio), `stimulus_text_receipt` | `Authorization: Key $FAL_KEY` |
 | Tavily | `TAVILY_API_KEY` | `topic_research` | `Authorization: Bearer $TAVILY_API_KEY` |
+| Pioneer | `PIONEER_API_KEY` | `teaching_signal_validation`, `learner_edge_recommendation` | `X-API-Key: $PIONEER_API_KEY` |
+| OpenAI Codex | `CODEX_API_KEY` | skill-driven gym authoring and orchestration | injected server-side into `@openai/codex-sdk` |
 
 Veed.io is not a `FAL_KEY`-style REST provider — it is an MCP server. See
 [MCP servers](#mcp-servers).
@@ -174,3 +177,13 @@ test the rest of the pipeline. See
 | Key expands to empty inside `bash -c` | double quotes let the outer shell expand it first | use single quotes |
 | `.env.local` shows in `git status` | `.gitignore` missing or overridden | `git check-ignore -v .env.local` should print a matching rule |
 | Works locally, fails in CI | CI has no `.env.local` | inject via the CI secret store as real environment variables; precedence means they win automatically |
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

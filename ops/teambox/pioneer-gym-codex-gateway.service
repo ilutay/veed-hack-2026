@@ -1,0 +1,50 @@
+[Unit]
+Description=Pioneer Gym narrow Codex action gateway
+Requires=pioneer-gym-codex-gateway.socket teambox-codex.service
+After=pioneer-gym-codex-gateway.socket teambox-codex.service
+
+[Service]
+Type=simple
+User=codex-runner
+Group=codex-runner
+SupplementaryGroups=teambox-codex
+WorkingDirectory=/srv/codex-workspaces/pioneer-gym/veed-hack-2026
+ExecStart=/usr/bin/node /srv/codex-workspaces/pioneer-gym/veed-hack-2026/ops/teambox/dist/src/lib/codex/teambox-gateway-main.js
+Restart=on-failure
+RestartSec=2s
+TimeoutStartSec=10s
+TimeoutStopSec=10s
+UMask=0077
+
+# The gateway can read the immutable release and connect only to Unix sockets.
+# It cannot read the protected Codex auth store; the existing app-server owns it.
+NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+PrivateDevices=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+ProcSubset=pid
+RestrictAddressFamilies=AF_UNIX
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+ReadOnlyPaths=/srv/codex-workspaces/pioneer-gym/veed-hack-2026
+InaccessiblePaths=-/etc/pioneer-gym -/var/lib/teambox-codex -/root/.codex -/home
+TasksMax=64
+MemoryMax=512M
+
+[Install]
+WantedBy=multi-user.target

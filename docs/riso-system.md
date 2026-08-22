@@ -86,7 +86,7 @@ The signature. A second impression, 2–3px off-axis, in a contrasting ink.
 ## 5. Type and motion
 
 **Type.** A chunky grotesque for display, a plain system stack for body. Display
-is set tight (`letter-spacing:-0.02em`), uppercase, and large — 
+is set tight (`letter-spacing:-0.02em`), uppercase, and large —
 `clamp(2rem, 6vw, 4.5rem)` for the lesson title. Body never exceeds 68 characters
 per line.
 

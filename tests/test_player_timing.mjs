@@ -2,7 +2,7 @@
  * Pure functions only — no DOM, no media element, so this is deterministic
  * where a browser's media stack is not.
  *
- *   node tests/test_player_timing.mjs
+ *   npm run test:timing
  */
 import { readFileSync } from "node:fs";
 import { buildBoundaries } from "../src/lib/timing.ts";

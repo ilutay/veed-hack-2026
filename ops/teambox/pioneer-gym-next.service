@@ -1,0 +1,54 @@
+[Unit]
+Description=Pioneer Gym Next.js web application
+Wants=network-online.target pioneer-gym-codex-gateway.socket
+After=network-online.target pioneer-gym-codex-gateway.socket
+
+[Service]
+Type=simple
+User=pioneer-gym
+Group=pioneer-gym
+WorkingDirectory=/srv/pioneer-gym/current
+Environment=NODE_ENV=production
+Environment=HOSTNAME=127.0.0.1
+Environment=PORT=3000
+EnvironmentFile=/etc/pioneer-gym/pioneer-gym.env
+ExecStart=/usr/bin/node /srv/pioneer-gym/current/server.js
+Restart=on-failure
+RestartSec=2s
+TimeoutStartSec=30s
+TimeoutStopSec=15s
+UMask=0077
+
+# Next needs outbound HTTPS for Pioneer/fal and the local Unix action socket.
+# It is explicitly denied the Codex app-server socket and credential locations.
+NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+PrivateDevices=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+ProcSubset=pid
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+InaccessiblePaths=-/run/teambox-codex -/var/lib/teambox-codex -/root/.codex -/home
+ReadOnlyPaths=/srv/pioneer-gym/current
+ReadWritePaths=-/srv/pioneer-gym/shared
+TasksMax=128
+MemoryMax=1G
+
+[Install]
+WantedBy=multi-user.target
