@@ -166,6 +166,14 @@ class TopicResearchTests(unittest.TestCase):
             self.assertEqual(brief["taste_hints"]["depth"], -0.25)
             self.assertEqual(brief["taste_hints"]["concreteness"], 1)
 
+    def test_ssl_cafile_prefers_a_non_empty_bundle(self):
+        cafile = topic_research.ssl_cafile()
+        self.assertIsNotNone(cafile)
+        self.assertGreater(Path(cafile).stat().st_size, 0)
+        context = topic_research.ssl_context()
+        self.assertTrue(context.check_hostname)
+        self.assertEqual(context.verify_mode, topic_research.ssl.CERT_REQUIRED)
+
     def test_live_path_sums_usage_credits_without_real_network(self):
         with tempfile.TemporaryDirectory() as temp_dir, mock.patch.object(
             urllib.request, "urlopen", blocked_urlopen

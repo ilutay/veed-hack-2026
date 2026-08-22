@@ -12,6 +12,7 @@ import argparse
 import json
 import os
 import re
+import ssl
 import subprocess
 import sys
 import urllib.error
@@ -100,7 +101,11 @@ class TavilyClient:
         }
         request = urllib.request.Request(url, data=body, headers=headers, method=method)
         try:
-            with urllib.request.urlopen(request, timeout=self.timeout_seconds) as response:
+            with urllib.request.urlopen(
+                request,
+                timeout=self.timeout_seconds,
+                context=ssl_context(),
+            ) as response:
                 data = response.read().decode("utf-8")
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")[:500]
@@ -963,6 +968,28 @@ def validate_instance(instance: Any, schema: dict[str, Any], path: str = "$") ->
         if maximum is not None and instance > maximum:
             raise AgentError(f"{path}: {instance} is above maximum {maximum}")
         return
+
+
+def ssl_cafile() -> str | None:
+    """CA bundle for python.org builds, which ship with an empty OpenSSL store."""
+    env = os.environ.get("SSL_CERT_FILE")
+    if env and Path(env).is_file() and Path(env).stat().st_size > 0:
+        return env
+    for candidate in (
+        "/etc/ssl/cert.pem",
+        "/private/etc/ssl/cert.pem",
+        ssl.get_default_verify_paths().openssl_cafile,
+    ):
+        if candidate and Path(candidate).is_file() and Path(candidate).stat().st_size > 0:
+            return candidate
+    return None
+
+
+def ssl_context() -> ssl.SSLContext:
+    cafile = ssl_cafile()
+    if cafile:
+        return ssl.create_default_context(cafile=cafile)
+    return ssl.create_default_context()
 
 
 def sanitize_provider_json(value: Any) -> Any:
