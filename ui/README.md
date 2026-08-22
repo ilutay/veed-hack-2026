@@ -36,6 +36,36 @@ npm run typecheck
 npm run build
 ```
 
+## Reaching it from your laptop
+
+Both servers bind to `127.0.0.1` on the remote host on purpose. Use an SSH
+tunnel — it needs no firewall change and exposes nothing to the internet.
+
+**You only need one tunnel.** Vite proxies `/api` to the bridge *server-side*,
+so the browser only ever talks to port 5173.
+
+```bash
+# on your laptop
+ssh -N -L 5173:127.0.0.1:5173 root@172.237.110.48
+```
+
+Then open <http://localhost:5173>. Keep both `npm run bridge` and `npm run dev`
+running on the host (tmux is already there). HMR works through the tunnel.
+
+If port 5173 is taken locally, map any local port to the remote 5173 —
+`-L 3000:127.0.0.1:5173`, then browse to `localhost:3000`.
+
+### Do not bind these to 0.0.0.0
+
+`ufw` is inactive on this host and sshd sets `gatewayports no`, so a `--host`
+flag or `-L` with a wildcard bind would put the bridge on the public internet.
+
+**The bridge has no authentication.** Every `POST /api/turn` spends real tokens
+on the ChatGPT account in `codex-runner`'s auth file, and the prompt is
+attacker-controlled. Anyone who finds port 8787 can bill you and run arbitrary
+prompts. Before it is exposed to anything wider than a tunnel it needs, at
+minimum, a shared secret, a per-IP rate limit, and a turn budget.
+
 ### The loop, concretely
 
 ```
