@@ -6,11 +6,13 @@
 # Run artifacts (generated media, provider responses)
 artifacts/
 
-# Next.js
+# App
 /node_modules
 /.next/
-/out/
+/dist
 *.tsbuildinfo
+__pycache__/
+*.pyc
 
 # OS / editor noise
 .DS_Store

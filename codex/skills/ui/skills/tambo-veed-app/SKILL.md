@@ -1,11 +1,11 @@
 ---
 name: tambo-veed-app
-description: How this project wires VEED video generation into a Tambo registry-only React app — Codex owns the event loop, ComponentRenderer mounts pre-made views, props are request ids not video URLs, FAL_KEY stays server-only, and the UI never awaits a render. Use when registering a TamboComponent, editing src/lib/registry.tsx, src/app/api/run, or src/app/api/codex/action, when a chat turn would hang on a video render, or when a component is about to spend money on a generation. Install `npx skills add tambo-ai/tambo` only for renderer/registry mechanics — this repo does not use Tambo Cloud. Companion endpoint docs live in `codex/skills/videos/skills/veed-fal-api`.
+description: How this project wires VEED video generation into a Tambo registry-only React app — Codex owns the event loop, ComponentRenderer mounts pre-made views, props are request ids not video URLs, FAL_KEY stays server-only, and the UI never awaits a render. Use when registering a TamboComponent, editing src/lib/registry.tsx, server/index.ts, or /api/run, when a chat turn would hang on a video render, or when a component is about to spend money on a generation. Install `npx skills add tambo-ai/tambo` only for renderer/registry mechanics — this repo does not use Tambo Cloud. Companion endpoint docs live in `codex/skills/videos/skills/veed-fal-api`.
 ---
 
 # Tambo × VEED (registry only)
 
-Taste Labs renders lessons with Tambo's **low-level registry and renderer**, not Tambo Cloud. Codex (this Next.js app + the Python pipeline) decides which component to show and when to start a run. `@tambo-ai/react@1.3.0` supplies `TamboRegistryProvider` and `ComponentRenderer` only.
+Taste Labs renders lessons with Tambo's **low-level registry and renderer**, not Tambo Cloud. Codex (the Vite React app + Node API + Python pipeline) decides which component to show and when to start a run. `@tambo-ai/react@1.3.0` supplies `TamboRegistryProvider` and `ComponentRenderer` only.
 
 Pinned install:
 
@@ -19,19 +19,19 @@ Docs: [React SDK](https://docs.tambo.co/reference/react-sdk), [ComponentRenderer
 
 App lives at the worktree root, not under `codex/skills/ui/`.
 
-| Path                                                                         | Role                                                                              |
-| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `src/app/page.tsx`                                                           | Product UI. Wraps `LessonApp`.                                                    |
-| `src/app/layout.tsx`                                                         | Imports `src/styles/riso.css` (ported from `page/riso.css`).                      |
-| `src/lib/registry.tsx`                                                       | `lessonComponents` + `LessonRuntime` (`TamboRegistryProvider`).                   |
-| `src/lib/timing.ts`                                                          | Pure `buildBoundaries`. `tests/test_player_timing.mjs` imports this.              |
-| `src/components/LessonApp.tsx`                                               | Registry + `CodexActionProvider` + `ComponentRenderer`.                           |
-| `src/components/CodexActionProvider.tsx`                                     | `dispatch({ type, payload })` → `POST /api/codex/action`.                         |
-| `src/components/{PromptComposer,LessonPlayer,NextChoices,TasteFeedback}.tsx` | Pre-made views. Look from `docs/riso-system.md`.                                  |
-| `src/app/api/codex/action/route.ts`                                          | Event loop. Dry-run copies `codex/examples/fixture-run`. Never fal, never Tavily. |
-| `src/app/api/run/route.ts`                                                   | `POST` → `{ status: "submitted", run_id }` in ~1s.                                |
-| `src/app/api/run/[id]/route.ts`                                              | `GET` → status + script/manifest. 404 if unknown.                                 |
-| `src/app/api/run/[id]/file/[...path]/route.ts`                               | Serves run assets for the player.                                                 |
+| Path                                                                         | Role                                                                        |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `src/main.tsx`                                                               | Vite entry. `/` = workflow, `/demo` = fixture.                              |
+| `index.html`                                                                 | Tilt Neon via Google Fonts. `src/styles/riso.css` imported from `main.tsx`. |
+| `src/lib/registry.tsx`                                                       | `lessonComponents` + `LessonRuntime` (`TamboRegistryProvider`).             |
+| `src/lib/timing.ts`                                                          | Pure `buildBoundaries`. `tests/test_player_timing.mjs` imports this.        |
+| `src/components/LessonApp.tsx`                                               | Registry + `CodexActionProvider` + `ComponentRenderer`.                     |
+| `src/components/CodexActionProvider.tsx`                                     | `dispatch({ type, payload })` → `POST /api/codex/action`.                   |
+| `src/components/{PromptComposer,LessonPlayer,NextChoices,TasteFeedback}.tsx` | Pre-made views. Look from `docs/riso-system.md`.                            |
+| `server/index.ts`                                                            | Event loop + run receipts. Vite proxies `/api` here. Never fal in the UI.   |
+| `POST /api/run`                                                              | `{ status: "submitted", run_id }` in ~1s.                                   |
+| `GET /api/run/:id`                                                           | Status + script/manifest. 404 if unknown.                                   |
+| `GET /api/run/:id/file/*`                                                    | Serves run assets for the player.                                           |
 
 `page/` remains the design-source / static harness until LessonPlayer is proven. Do not delete it.
 
@@ -42,7 +42,7 @@ This app must not mount Tambo Cloud. `rg` on the names below should only hit com
 - Tambo Cloud's root provider (the one that takes an API key)
 - Tambo thread input / `.submit()`
 - Tambo tools and MCP servers (pass `tools={[]}` `mcpServers={[]}`)
-- Any `NEXT_PUBLIC_TAMBO_*` or Tambo API key env var
+- Any `VITE_TAMBO_*`, `NEXT_PUBLIC_TAMBO_*`, or Tambo API key env var
 - Direct Pioneer-to-Tambo calls (there is no Pioneer here — the analogue is the educational-video pipeline / fal)
 
 ## The rule everything else follows from

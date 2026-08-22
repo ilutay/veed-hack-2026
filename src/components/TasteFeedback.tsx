@@ -1,5 +1,3 @@
-"use client";
-
 import { useCodexAction } from "@/components/CodexActionProvider";
 import {
   TASTE_REACTIONS,

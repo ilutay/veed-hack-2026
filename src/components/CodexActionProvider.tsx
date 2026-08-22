@@ -1,5 +1,3 @@
-"use client";
-
 import {
   type CodexAction,
   type CodexActionResponse,
@@ -16,7 +14,10 @@ import {
   type ReactNode,
 } from "react";
 
+export type AppMode = "demo" | "workflow";
+
 type CodexContextValue = {
+  mode: AppMode;
   episodeId: string;
   turnId: string;
   blocks: TamboComponentContent[];
@@ -34,7 +35,13 @@ function bootBlocks(): TamboComponentContent[] {
   return [componentBlock("PromptComposer", {}, "boot-composer")];
 }
 
-export function CodexActionProvider({ children }: { children: ReactNode }) {
+export function CodexActionProvider({
+  children,
+  mode = "workflow",
+}: {
+  children: ReactNode;
+  mode?: AppMode;
+}) {
   const [episodeId, setEpisodeId] = useState(BOOT_EPISODE);
   const [turnId, setTurnId] = useState(BOOT_TURN);
   const [blocks, setBlocks] = useState<TamboComponentContent[]>(bootBlocks);
@@ -51,6 +58,7 @@ export function CodexActionProvider({ children }: { children: ReactNode }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             episodeId: episodeId === BOOT_EPISODE ? newId("ep") : episodeId,
+            mode,
             action,
           }),
         });
@@ -68,12 +76,12 @@ export function CodexActionProvider({ children }: { children: ReactNode }) {
         setPending(false);
       }
     },
-    [episodeId],
+    [episodeId, mode],
   );
 
   const value = useMemo(
-    () => ({ episodeId, turnId, blocks, pending, error, dispatch }),
-    [episodeId, turnId, blocks, pending, error, dispatch],
+    () => ({ mode, episodeId, turnId, blocks, pending, error, dispatch }),
+    [mode, episodeId, turnId, blocks, pending, error, dispatch],
   );
 
   return (

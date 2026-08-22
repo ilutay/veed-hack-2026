@@ -1,5 +1,3 @@
-"use client";
-
 import { LessonPlayer } from "@/components/LessonPlayer";
 import { NextChoices } from "@/components/NextChoices";
 import { PromptComposer } from "@/components/PromptComposer";

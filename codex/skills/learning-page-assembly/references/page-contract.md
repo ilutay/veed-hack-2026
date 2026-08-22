@@ -1,6 +1,6 @@
 # Page Contract
 
-The product UI is the Next.js app at the repo root (`src/app/page.tsx`).
+The product UI is the Vite + React Router app at the repo root (`src/main.tsx`).
 Tambo's registry renderer mounts `PromptComposer`, `LessonPlayer`, `NextChoices`,
 and `TasteFeedback`. Codex (`POST /api/codex/action`) starts pipeline runs and
 returns component blocks. Assembly may still copy assets into the run directory
@@ -22,7 +22,7 @@ run. Visual tokens live in `docs/riso-system.md` and `src/styles/riso.css`.
 
 ## Run Path
 
-The Next player resolves a run through `GET /api/run/{run_id}` and assets
+The player resolves a run through `GET /api/run/{run_id}` and assets
 through `/api/run/{run_id}/file/{path}`. Asset paths in `asset-manifest.json`
 are relative to the run root (`02-content-generation/...`). Manifest and
 lesson-script sit at the run root.
