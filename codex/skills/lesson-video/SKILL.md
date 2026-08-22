@@ -1,63 +1,38 @@
 ---
-name: offline-lesson-video
-description: How to turn a lesson script into a finished mp4 on this machine — the offline PIL+espeak-ng path that needs no provider credentials, the fal path to prefer when FAL_KEY is present, and the slide-text composition step that keeps generated art from rendering misspelled words. Use when rendering a lesson video, when FAL_KEY is missing or you are told to stay in dry-run, when slide text comes out garbled, when a rendered video has the wrong audio or the wrong length, or when wiring the bridge's /api/lesson job API to the UI.
+name: lesson-video
+description: How to turn a lesson script into a finished mp4 through fal — the render chain and its directory layout, the slide-text composition step that keeps generated art from rendering misspelled words, and the failure modes that produce a wrong-looking video with exit 0. Use when rendering a lesson video, when slide text comes out garbled, when a rendered video has the wrong audio or the wrong length, or when wiring the bridge's /api/lesson job API to the UI.
 ---
 
-# Offline lesson video
+# Lesson video
 
-Two ways to get from `lesson-script.json` to `lesson-video.mp4`. Both end in the
-same assembler and the same directory layout, so the UI does not care which ran.
+One way from `lesson-script.json` to `lesson-video.mp4`: fal for the assets,
+`assemble_slideshow_video.py` to mux them.
 
 | Path | Needs | Slides | Narration |
 | --- | --- | --- | --- |
-| offline | nothing | `local_media_agent.py`, PIL-drawn | `espeak-ng`, synthetic |
 | fal | `FAL_KEY` | `fal-ai/z-image/turbo` art | `xai/tts/v1`, natural |
 
-The offline path is the fallback when no credential is available. It calls no
-external provider, so `WORKFLOW_MODE` stays `dry-run` and nothing is billed.
+There is no credential-free path. `--mode dry-run` writes payload stubs and
+deterministic artifact paths without calling the provider, which is enough to
+exercise the job API but produces nothing the assembler can mux.
 
-## Layout both paths produce
+## Layout
 
 ```text
 <run>/
 |-- 01-script/lesson-script.json
 |-- 02-content-generation/
 |   |-- slide-images/slide-01.png ...
-|   |-- voiceover.wav          # offline;  voiceover.mp3 from fal
+|   |-- voiceover.mp3
 |   `-- narration-timings.json
 `-- 03-video/
     |-- lesson-video.mp4
     `-- video-build.json
 ```
 
-## Offline path
+## Rendering
 
-```bash
-python3 codex/tools/local_media_agent.py \
-    --script <run>/01-script/lesson-script.json --output-dir <run>
-python3 codex/tools/assemble_slideshow_video.py \
-    --content-dir <run>/02-content-generation \
-    --output <run>/03-video/lesson-video.mp4 --timing-fit auto
-```
-
-`local_media_agent.py --self-test` renders a synthetic two-slide lesson and
-checks the outputs; run it first when something looks wrong.
-
-Timings are **measured** from the generated audio, not estimated, so
-`narration-timings.json` carries `"estimated": false` and the assembler pads
-rather than scales. A consequence worth expecting: a script declaring
-`duration_seconds: 15` renders to roughly 23 seconds, because espeak-ng is
-slower than the contract's word budget. The audio is the source of truth.
-
-Prerequisites: `ffmpeg`, `ffprobe`, `espeak-ng`, python `PIL`, and
-`fonts-dejavu-core`. There is no emoji or CJK font on this box, so those
-characters render as tofu boxes — harmless, but model-authored `key_points`
-often carry emoji.
-
-## fal path, when FAL_KEY is present
-
-Better art and a natural voice. Always go through the runner so the key stays
-out of your shell history:
+Always go through the runner so the key stays out of your shell history:
 
 ```bash
 WORKFLOW_MODE=live scripts/with-env.sh python3 codex/tools/fal_media_agent.py \
@@ -100,21 +75,27 @@ python3 codex/tools/assemble_slideshow_video.py \
 scrim, because the model still slips occasional lettering into the art even when
 told not to, and a see-through panel lets that show behind the real title.
 
+This step is **not yet wired into the bridge**, which calls the media agent and
+then the assembler directly. A render started from `/api/lesson` therefore ships
+whatever lettering z-image drew.
+
 ## Failure modes worth knowing
 
-**Never mix a fal run and a local run in one `02-content-generation/`.**
+**Never reuse a `02-content-generation/` across runs.**
 `assemble_slideshow_video.py` resolves audio as `(mp3, wav, m4a)` and takes the
-first hit, so a `voiceover.mp3` left by a fal run silently outranks the
-`voiceover.wav` a later local run writes. The result is a video built on the
-wrong audio, at the wrong length, with exit 0 and no warning.
-`local_media_agent.py` deletes those siblings before synthesising, but a fal run
-into a directory holding a stale wav has no such guard.
+first hit, so a stale `voiceover.mp3` silently outranks whatever a later run
+writes. The result is a video built on the wrong audio, at the wrong length,
+with exit 0 and no warning. The bridge is safe here only because it renders into
+a fresh `<jobId>` directory every time.
 
-**Slide ids become filenames.** `local_media_agent.py` rejects any id that is not
-a plain filename. The contract pins `^slide-[0-9]{2}$`, but structured-output
-providers commonly ignore `pattern` and the bridge does not re-validate the
-script it gets back, so that check is the only thing between a model-authored id
-and a write outside the run directory.
+**Slide ids become filenames.** They are used to build
+`slide-images/<id>.png` and the provider metadata paths. The contract pins
+`^slide-[0-9]{2}$`, but structured-output providers commonly ignore `pattern`,
+and `fal_media_agent.py` only `setdefault`s a *missing* id — it never validates
+one that is present. `assertSafeSlideIds` in `ui/server/bridge.mjs` re-checks the
+script codex returns; that guard is the only thing between a model-authored id
+and a write outside the run directory. Anything invoking the agent outside the
+bridge has no such protection.
 
 **Timings that disagree with the audio.** `--timing-fit auto` scales estimated
 timings and pads measured ones. `strict` fails instead, which is what you want in
@@ -129,6 +110,10 @@ reports `scripting` -> `media` -> `assembly` -> `completed`, and the finished mp
 is served from `/media/lessons/<jobId>/03-video/lesson-video.mp4` with HTTP range
 support so a `<video>` element can seek. The `LessonVideo` Tambo component polls
 that endpoint. See `ui/README.md` for the component and registry side.
+
+The media stage runs `--mode live` and bills per render; set
+`LESSON_MEDIA_MODE=dry-run` to exercise the job API without spending, and expect
+the assembly stage to fail.
 
 The render takes minutes, so the job API never blocks — the same rule the
 `tambo-veed-app` skill states for fal renders.

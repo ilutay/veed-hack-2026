@@ -51,7 +51,14 @@ const LESSON_ROOT = (() => {
   return realpathSync(LESSON_ROOT_LOGICAL);
 })();
 const LESSON_SCHEMA = join(REPO_ROOT, "codex/contracts/lesson-script.schema.json");
-const MEDIA_AGENT = join(REPO_ROOT, "codex/tools/local_media_agent.py");
+// Slides and voiceover come from fal. The agent defaults to dry-run, which
+// writes payload stubs rather than real assets, so the stage is pinned to
+// live: a dry-run render would reach the assembler with nothing to mux.
+// Live needs FAL_KEY in the bridge's own environment (the child inherits it)
+// and bills per render; without it the agent exits non-zero saying so, which
+// surfaces as a failed job rather than a hang.
+const MEDIA_AGENT = join(REPO_ROOT, "codex/tools/fal_media_agent.py");
+const MEDIA_MODE = process.env.LESSON_MEDIA_MODE ?? "live";
 const ASSEMBLER = join(REPO_ROOT, "codex/tools/assemble_slideshow_video.py");
 
 const MAX_CONCURRENT_RENDERS = 1;
@@ -249,8 +256,32 @@ function readLessonScript(path) {
     raw = raw.replace(/^```[a-zA-Z]*\s*/, "").replace(/```\s*$/, "").trim();
   }
   const script = stripNulls(JSON.parse(raw));
+  assertSafeSlideIds(script);
   writeFileSync(path, `${JSON.stringify(script, null, 2)}\n`);
   return script;
+}
+
+/**
+ * Slide ids become filenames downstream: the media agent writes
+ * `slide-images/<id>.png` and its provider metadata from the same string. The
+ * contract pins `^slide-[0-9]{2}$`, but structured-output providers routinely
+ * ignore `pattern`, and fal_media_agent.py only `setdefault`s a missing id — it
+ * never validates one that is present. This is therefore the only thing between
+ * a model-authored id and a write outside the run directory.
+ */
+function assertSafeSlideIds(script) {
+  const slides = script?.slides;
+  if (!Array.isArray(slides) || slides.length === 0) {
+    throw new Error("lesson script has no slides");
+  }
+  for (const slide of slides) {
+    const id = slide?.id;
+    // Absent is fine — the media agent fills in slide-NN itself.
+    if (id === undefined || id === null) continue;
+    if (typeof id !== "string" || !/^slide-[0-9]{2}$/.test(id)) {
+      throw new Error(`unsafe slide id ${JSON.stringify(id)}`);
+    }
+  }
 }
 
 async function probeVideo(path) {
@@ -312,10 +343,11 @@ async function renderLesson(job) {
   if (typeof script.title === "string") job.title = script.title;
 
   setStage(job, "media");
-  await run("python3", [MEDIA_AGENT, "--script", scriptPath, "--output-dir", runDir], {
-    timeoutMs: MEDIA_TIMEOUT_MS,
-    cwd: REPO_ROOT,
-  });
+  await run(
+    "python3",
+    [MEDIA_AGENT, "--script", scriptPath, "--output-dir", runDir, "--mode", MEDIA_MODE],
+    { timeoutMs: MEDIA_TIMEOUT_MS, cwd: REPO_ROOT },
+  );
 
   setStage(job, "assembly");
   mkdirSync(videoDir, { recursive: true });

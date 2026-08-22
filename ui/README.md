@@ -81,9 +81,17 @@ The bridge mints both the job id and the media URL. Nothing model-authored
 reaches either, and `componentId` comes from `crypto.randomUUID()` in the app.
 Vite proxies `/media` as well as `/api`, so this still needs one tunnel.
 
-The render itself is fully offline: `local_media_agent.py` (PIL slides,
-espeak-ng voiceover) then `assemble_slideshow_video.py` (ffmpeg). Only the
-script-authoring stage calls codex.
+The render runs `fal_media_agent.py` (`fal-ai/z-image/turbo` slides,
+`xai/tts/v1` voiceover) then `assemble_slideshow_video.py` (ffmpeg). Codex is
+called only for the script-authoring stage.
+
+The media stage is pinned to `--mode live`, because the agent's `dry-run`
+default writes payload stubs instead of assets and the assembler would find
+nothing to mux. Live requires `FAL_KEY` in the bridge process's environment
+and bills per render; without it the stage exits non-zero and the job reports
+`failed` with that message. Set `LESSON_MEDIA_MODE=dry-run` to exercise the
+job API without spending anything — the render will fail at assembly, which
+is the point.
 
 ### The gym loop, concretely
 
