@@ -117,13 +117,12 @@ function Studio() {
     (command: CodexComponentCommand, summary = commandSummary(command)) => {
       surfaceVersion.current += 1;
       setActiveBlock(command);
-      append({
-        id: crypto.randomUUID(),
-        role: "assistant",
-        text: summary,
-      });
+      setMessages((previous) => [
+        ...previous.map((message) => (message.block ? { ...message, block: undefined } : message)),
+        { id: crypto.randomUUID(), role: "assistant", text: summary },
+      ]);
     },
-    [append],
+    [],
   );
 
   useEffect(() => {
@@ -133,6 +132,15 @@ function Studio() {
 
   const appendPlan = useCallback(
     (plan: Plan) => {
+      if (plan.messages.some((message) => message.block)) {
+        // Only the latest deterministic surface stays interactive. When a
+        // model-authored active surface is being replaced, retire it too.
+        surfaceVersion.current += 1;
+        setActiveBlock(null);
+        setMessages((previous) =>
+          previous.map((message) => (message.block ? { ...message, block: undefined } : message)),
+        );
+      }
       for (const planned of plan.messages) {
         const turnId = planned.block ? nextTurnId() : undefined;
         append({
@@ -219,7 +227,7 @@ function Studio() {
       visibleCommand?: CodexComponentCommand | null,
     ) => {
       const normalizedTopic = topic.trim() || "the current lesson";
-      if (!event) practiceContext.current = { topic: normalizedTopic };
+      const nextPracticeContext = !event ? { topic: normalizedTopic } : null;
       const requestGeneration = ++surfaceVersion.current;
       const turnId = nextTurnId();
       pendingRequests.current += 1;
@@ -245,6 +253,7 @@ function Studio() {
         // A newer side-chat command owns the page. Do not let an older tutor
         // response arrive later and replace what the learner just requested.
         if (surfaceVersion.current !== requestGeneration) return;
+        if (nextPracticeContext) practiceContext.current = nextPracticeContext;
         activateBlock(command);
       } catch (err) {
         if (surfaceVersion.current === requestGeneration) {

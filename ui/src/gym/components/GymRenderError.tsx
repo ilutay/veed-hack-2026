@@ -1,9 +1,8 @@
 /**
  * Rendered when ComponentRenderer cannot resolve a block.
  *
- * Note this fires ONLY on an unregistered component name. Props that fail
- * schema validation are logged with console.warn and rendered anyway — see
- * ui/README.md. Components must therefore tolerate bad props on their own.
+ * This is also the fail-closed path for props that do not match the selected
+ * registered component. Invalid model output never reaches the renderer.
  */
 export function GymRenderError() {
   return (

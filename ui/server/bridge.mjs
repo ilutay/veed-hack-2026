@@ -93,7 +93,9 @@ Reply with JSON matching the provided schema and nothing else.
 The learner goes through onboarding once (name → interests → level quiz → recommendations) and then
 learns from short rendered video lessons. Read the onboarding status in the state and respect it:
 
-- ProfileGate: no profile yet. Always the answer when status is "none".
+- ProfileGate: only when the learner is beginning onboarding and needs to enter a name. A direct
+  side-chat question, preference or piece of feedback must use AgentNote even when status is "none";
+  never duplicate the name form merely because no profile exists yet.
 - InterestSurvey: status is "interests" (a new profile), or the learner wants to change interests.
 - LevelQuiz: status is "quiz", or the learner asks to be tested / for a level check. While status is
   "researching" the quiz is still being researched: still choose LevelQuiz; it waits for it.
@@ -104,7 +106,8 @@ learns from short rendered video lessons. Read the onboarding status in the stat
   only use it when a topic is actually there — "give me a lesson" with no topic is PromptComposer.
 - PromptComposer: the learner wants a lesson but has not said on what; seed_topic may suggest one.
 - AgentNote: anything else — a question, a preference, feedback, small talk. Put a short helpful
-  reply in props.text; mention that preferences are remembered.
+  reply in props.text. If no profile exists, answer the question without claiming the preference
+  was stored; otherwise mention that preferences are remembered when relevant.
 
 Gym exercises (ProbeArena, CreditAssignmentReplay, TargetedRetryGym, LayerOrderTransferGym) are
 only for the explicit gym loop: when the state says the learner is in a gym turn, choose among them
@@ -171,7 +174,12 @@ function runCodexTurn(prompt) {
       try {
         if (code !== 0) throw new Error(`codex exec exited ${code}: ${stderr.slice(-500)}`);
         const raw = readFileSync(outFile, "utf8").trim();
-        resolvePromise(JSON.parse(raw));
+        const envelope = JSON.parse(raw);
+        const command = envelope?.command;
+        if (!command || typeof command !== "object") {
+          throw new Error("codex output is missing its component command");
+        }
+        resolvePromise(command);
       } catch (err) {
         reject(err);
       } finally {

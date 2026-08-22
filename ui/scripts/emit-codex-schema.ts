@@ -52,18 +52,27 @@ const propVariants = gymComponents.map((c) =>
 );
 
 /**
- * Structured outputs reject `oneOf` and require an object at the root, so the
- * command is flattened: a name drawn from the registry plus an `anyOf` over the
- * four prop shapes. The pairing of name to props is therefore not enforced by
- * the schema — the client re-validates, and each component guards its own props.
+ * Structured outputs require an object at the root, but support `anyOf` below
+ * it. Keep the root as a small envelope and put the discriminated command union
+ * inside it. This binds every component name to its exact props shape instead
+ * of independently accepting any registered name with any registered props.
  */
-const schema = {
+const commandVariants = gymComponents.map((component, index) => ({
   type: "object",
   additionalProperties: false,
   required: ["componentName", "props"],
   properties: {
-    componentName: { enum: gymComponents.map((c) => c.name) },
-    props: { anyOf: propVariants },
+    componentName: { type: "string", enum: [component.name] },
+    props: propVariants[index],
+  },
+}));
+
+const schema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["command"],
+  properties: {
+    command: { anyOf: commandVariants },
   },
 };
 

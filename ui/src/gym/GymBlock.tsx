@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { ComponentRenderer, type TamboComponentContent } from "@tambo-ai/react";
+import type { ZodType } from "zod";
 import { CodexActionProvider, type CodexGymEvent } from "../codex/CodexActionProvider";
 import { GymRenderError } from "./components/GymRenderError";
 import { GymErrorBoundary } from "./GymErrorBoundary";
+import { registeredComponents } from "./registry";
 
 /** The component command Codex sends after it calls Pioneer. */
 export interface CodexComponentCommand {
@@ -54,11 +56,17 @@ export function GymBlock({ command, onEvent, pending = null }: GymBlockProps) {
   const [ready, setReady] = useState(false);
   useEffect(() => setReady(true), []);
 
+  const registration = registeredComponents.find((component) => component.name === command.componentName);
+  const parsedProps = registration
+    ? (registration.propsSchema as ZodType<Record<string, unknown>>).safeParse(command.props)
+    : null;
+  if (!parsedProps?.success) return <GymRenderError />;
+
   const block: TamboComponentContent = {
     type: "component",
     id: command.componentId,
     name: command.componentName,
-    props: command.props,
+    props: parsedProps.data,
   };
 
   return (

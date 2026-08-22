@@ -172,9 +172,8 @@ This silently produced an empty schema for Codex before it was caught.
 Two rejections worth knowing before writing an `--output-schema` file:
 
 - `oneOf` is not permitted, and the root must be an object. The command schema
-  is therefore a flat object with a `componentName` enum plus an `anyOf` over
-  the prop shapes — so the schema does *not* enforce that the name matches the
-  props. The client re-validates and each component guards its own props.
+  therefore uses a root `{ command }` envelope with a nested `anyOf`. Each
+  variant binds one `componentName` to its exact props schema.
 - Every object needs `additionalProperties: false`. zod omits it on nested
   objects, so the generator injects it everywhere.
 
@@ -236,14 +235,15 @@ when the component name is missing from the registry**. On schema-validation
 failure the renderer emits `console.warn("Props validation failed for component
 X")` and **renders the component with the raw, unvalidated props**.
 
-Consequences:
+Consequences in the upstream renderer:
 
 - Every gym component must tolerate bad and partial props on its own. All four
   accept `Partial<Props>` and render a pending state instead of throwing.
 - Props also arrive partial *during streaming* (the renderer parses partial
   JSON each tick), so `choices.map(...)` without a guard throws on tick one.
-- If you need hard rejection on invalid props, validate before constructing the
-  block; the renderer will not do it for you.
+- Hard rejection must happen before constructing the block. `GymBlock` does
+  that against the exact selected registry entry and renders the local error
+  surface instead of passing malformed props onward.
 
 ### `propsSchema` is mandatory in practice
 
