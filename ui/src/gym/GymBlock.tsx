@@ -11,6 +11,13 @@ export interface CodexComponentCommand {
   props: Record<string, unknown>;
   episodeId: string;
   turnId: string;
+  pioneerReceipt?: {
+    requestId: string;
+    mode: "live";
+    phase: "diagnose" | "feedback" | "retry" | "transfer";
+    focus: string;
+    reason: string;
+  };
 }
 
 export interface GymBlockProps {
