@@ -16,7 +16,7 @@ import {
   type HumanUiEvent,
   type JourneyProgress,
   type UiReceipt,
-} from "../tambo/gym-contract";
+} from "../gym-ui/gym-contract";
 
 import { GymError } from "./errors";
 import {
@@ -794,7 +794,7 @@ export class GymEngine {
       this.receipt(
         "codex_decision",
         "Codex bound Pioneer’s curriculum choice",
-        "Codex executed the exact recommended challenge through a registered Tambo component.",
+        "Codex executed the exact recommended challenge through the approved component registry.",
         "accepted",
         binding.executionProvenance === "live"
           ? "live"
@@ -822,7 +822,7 @@ export class GymEngine {
         nextFixture.episodeRole === "held_out_transfer"
           ? learningProgress("transfer", "transfer_pending")
           : learningProgress("adapt", "practicing"),
-      message: `Pioneer chose ${nextFixture.challengeTemplateId}; Codex bound that exact choice for Tambo.`,
+      message: `Pioneer chose ${nextFixture.challengeTemplateId}; Codex bound that exact choice for practice.`,
     };
   }
 

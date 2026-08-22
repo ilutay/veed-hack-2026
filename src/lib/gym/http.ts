@@ -210,7 +210,7 @@ export function handleHealthGet(
       },
       engine: engineHealth,
       liveAdaptersReady,
-      tamboBackend: false,
+      componentRendererBackend: false,
     },
     ready ? 200 : 503,
   );

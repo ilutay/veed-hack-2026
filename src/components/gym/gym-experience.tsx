@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   useCallback,
   useEffect,
@@ -14,13 +15,12 @@ import {
   type GymApiRequest,
   type HumanUiEvent,
   type JourneyProgress,
-  type UiReceipt,
-} from "@/lib/tambo/gym-contract";
+} from "@/lib/gym-ui/gym-contract";
 import { LIVE_GYM_UI_DEADLINE_MS } from "@/lib/contracts/live-deadlines";
 
 import { CodexActionProvider } from "./codex-action-context";
+import { CommandRenderer } from "./command-renderer";
 import styles from "./gym.module.css";
-import { TamboReceiptRenderer } from "./tambo-receipt-renderer";
 
 const initialProgress: JourneyProgress = {
   steps: [
@@ -44,19 +44,19 @@ function bootstrapCommand(sessionId: string): CodexUiCommand {
       id: "component_learning_prompt",
       name: "LearningPrompt",
       props: {
-        eyebrow: "PIONEER GYM / HUMAN RL SESSION",
-        title: "Train the decision, not the answer.",
+        eyebrow: "PIONEER GYM / HUMAN LEARNING",
+        title: "What do you want to learn?",
         description:
-          "Tell Codex what you want to learn. It will build a short practice gym where Pioneer certifies each rep, reads your evidence, and tests transfer before making a learning claim.",
+          "Describe a skill or judgment. Codex will turn it into a short practice session, and Pioneer will adapt the next rep to your evidence.",
         placeholder: "I want to make short-form product videos that feel intentional, not generic.",
-        submitLabel: "Build my first rep",
+        submitLabel: "Start practicing",
         examples: [
           "I want to make short-form product videos that feel intentional, not generic.",
           "Teach me to spot weak visual hierarchy.",
           "Help me make creative choices I can defend.",
         ],
         supportedEnvelope:
-          "Live demo focus: visual hierarchy and creative judgment.",
+          "Demo focus: visual hierarchy and creative judgment.",
         sessionTimeboxSeconds: 90,
       },
       streamingState: "done",
@@ -70,63 +70,25 @@ function pendingCopy(event: HumanUiEvent) {
   switch (event.type) {
     case "start":
       return {
-        title: "Codex is interpreting your learning goal",
-        detail: "Codex binds the goal to the exact prevalidated baseline fixture and loads its Pioneer #1 teaching-signal receipt.",
+        title: "Building your first practice rep",
+        detail: "Codex is turning your goal into a focused decision you can practice now.",
       };
     case "feedback.acknowledged":
       return {
-        title: "Pioneer #2 is finding your next edge",
-        detail: "It chooses from the eligible curriculum to maximize transferable learning gain per minute; Codex validates and renders that exact choice.",
+        title: "Choosing the next edge to train",
+        detail: "Pioneer is using your latest evidence to pick the most useful next rep.",
       };
     case "ui.component_failed":
       return {
-        title: "Codex is checking the safe inventory",
-        detail: "Only a separately validated fallback may replace the failed command.",
+        title: "Finding a safe way forward",
+        detail: "Codex is checking the approved exercise inventory.",
       };
     default:
       return {
-        title: "The fixed rubric is scoring your evidence",
-        detail: "Your choice, reasoning, and confidence were submitted atomically to the deterministic assessment policy.",
+        title: "Reading your response",
+        detail: "Your choice, reasoning, and confidence are being scored together.",
       };
   }
-}
-
-function ReceiptRail({ receipts, progress }: { receipts: UiReceipt[]; progress: JourneyProgress }) {
-  return (
-    <aside className={styles.receiptRail} aria-label="Pioneer and Codex evidence receipts">
-      <div className={styles.railHeader}>
-        <div>
-          <strong>Evidence chain</strong>
-          <small>Judgments are receipts. Codex owns every action.</small>
-        </div>
-        <span className={styles.statusPill}>{progress.learningStatus.replaceAll("_", " ")}</span>
-      </div>
-      {receipts.length ? (
-        <div className={styles.receiptList}>
-          {receipts.map((receipt) => (
-            <article className={styles.receiptCard} key={receipt.id}>
-              <div className={styles.receiptTopline}>
-                <span>{receipt.kind.replaceAll("_", " ")} · {receipt.provenance}</span>
-                <span>{receipt.status.replaceAll("_", " ")}</span>
-              </div>
-              <strong>{receipt.title}</strong>
-              <p>{receipt.summary}</p>
-              {receipt.reference ? <span className={styles.receiptRef}>{receipt.reference}</span> : null}
-            </article>
-          ))}
-        </div>
-      ) : (
-        <div className={styles.emptyReceipts}>
-          <span aria-hidden="true">↳</span>
-          <p>Pioneer validation, human evidence, adaptation, and transfer receipts will appear here.</p>
-        </div>
-      )}
-      <div className={styles.renderReceipt}>
-        Tambo: registered-component renderer only<br />
-        No agent · no API key · no tools · no thread state
-      </div>
-    </aside>
-  );
 }
 
 export interface GymExperienceProps {
@@ -157,7 +119,6 @@ export function GymExperience({ endpoint = "/api/gym" }: GymExperienceProps) {
     bootstrapCommand(bootstrapSessionId),
   );
   const [sessionReady, setSessionReady] = useState(false);
-  const [receipts, setReceipts] = useState<UiReceipt[]>([]);
   const [progress, setProgress] = useState<JourneyProgress>(initialProgress);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -212,7 +173,6 @@ export function GymExperience({ endpoint = "/api/gym" }: GymExperienceProps) {
 
         setSessionId(parsed.data.sessionId);
         setCommand(parsed.data.command);
-        setReceipts(parsed.data.receipts);
         if (parsed.data.progress) setProgress(parsed.data.progress);
         setMessage(parsed.data.message ?? null);
       } catch (caught) {
@@ -252,36 +212,40 @@ export function GymExperience({ endpoint = "/api/gym" }: GymExperienceProps) {
         <header className={styles.appHeader}>
           <div className={styles.brand}>
             <span className={styles.brandMark}>PG</span>
-            <span>Pioneer Gym<small>RL-style practice for humans</small></span>
+            <span>Pioneer Gym<small>Practice that adapts to you</small></span>
           </div>
-          <div className={styles.authorityLine} aria-label="System authority boundary">
-            <span><i className={styles.authorityDot} />Codex operating</span>
-            <span>Pioneer optimizes curriculum</span>
-            <span>Tambo renders</span>
+          <div className={styles.headerActions}>
+            <span>Codex runs · Pioneer adapts</span>
+            <Link className={styles.lessonLink} href="/lesson">Watch a real lesson</Link>
           </div>
         </header>
 
-        <nav className={styles.journeyNav} aria-label="Learning journey">
+        <ol className={styles.journeyNav} aria-label="Learning journey">
           {progress.steps.map((step, index) => (
-            <div className={styles.journeyStep} data-state={step.state} key={step.id}>
-              <span className={styles.journeyIndex}>{step.state === "complete" ? "✓" : index + 1}</span>
+            <li
+              aria-current={step.state === "active" ? "step" : undefined}
+              aria-label={`${index + 1}. ${step.label}: ${step.state}`}
+              className={styles.journeyStep}
+              data-state={step.state}
+              key={step.id}
+            >
+              <span className={styles.journeyIndex}>{String(index + 1).padStart(2, "0")}</span>
               <span>{step.label}</span>
-            </div>
+            </li>
           ))}
-        </nav>
+        </ol>
 
         {message ? <div className={styles.messageBanner} role="status">{message}</div> : null}
         {error ? (
           <div className={styles.errorBanner} role="alert">
             <span>{error}</span>
-            <button disabled={interactionPending} onClick={retry} type="button">Retry same receipt</button>
+            <button disabled={interactionPending} onClick={retry} type="button">Retry</button>
           </div>
         ) : null}
 
-        <div className={styles.experienceGrid}>
-          <section className={`${styles.stage} ${interactionPending ? styles.stageBusy : ""}`} aria-busy={interactionPending}>
+        <section className={`${styles.stage} ${interactionPending ? styles.stageBusy : ""}`} aria-busy={interactionPending}>
             <CodexActionProvider command={command} emit={emit} pending={interactionPending}>
-              <TamboReceiptRenderer command={command} />
+              <CommandRenderer command={command} />
             </CodexActionProvider>
             {interactionPending ? (
               <div className={styles.pendingVeil} aria-live="polite">
@@ -292,9 +256,7 @@ export function GymExperience({ endpoint = "/api/gym" }: GymExperienceProps) {
                 </div>
               </div>
             ) : null}
-          </section>
-          <ReceiptRail progress={progress} receipts={receipts} />
-        </div>
+        </section>
       </div>
     </main>
   );

@@ -16,7 +16,7 @@ import {
   type GymComponentName,
   type ResponseContractRef,
   type StimulusVariant,
-} from "../tambo/gym-contract";
+} from "../gym-ui/gym-contract";
 
 import type {
   CurriculumEvidence,

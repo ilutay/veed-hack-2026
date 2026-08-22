@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import type { ExerciseUiCommand, GymApiResponse } from "../tambo/gym-contract";
+import type { ExerciseUiCommand, GymApiResponse } from "../gym-ui/gym-contract";
 
 import { GymEngine, createGymEngine } from "./engine";
 import {

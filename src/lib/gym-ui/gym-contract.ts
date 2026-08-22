@@ -8,6 +8,8 @@ import {
   type GymComponentName,
 } from "../contracts/gym-components";
 
+/** Strict shared boundary for browser events and Codex-issued UI commands. */
+
 export { GYM_COMPONENT_NAMES, gymComponentNameSchema };
 export type { GymComponentName };
 

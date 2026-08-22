@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 
 import { getGymComponentDefinition } from "../contracts/gym-components";
-import { codexUiCommandSchema } from "../tambo/gym-contract";
+import { codexUiCommandSchema } from "../gym-ui/gym-contract";
 import {
   compareArenaProps,
   demoFixtureBindings,

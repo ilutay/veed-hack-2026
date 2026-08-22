@@ -12,7 +12,7 @@ import type {
   CodexUiCommand,
   ExerciseSubmissionDraft,
   HumanUiEvent,
-} from "@/lib/tambo/gym-contract";
+} from "@/lib/gym-ui/gym-contract";
 
 function createClientId(prefix: string) {
   const suffix =

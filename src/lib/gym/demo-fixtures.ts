@@ -20,11 +20,11 @@ import type {
   StimulusVariant,
   TargetedRetryGymProps,
   UiReceipt,
-} from "../tambo/gym-contract";
+} from "../gym-ui/gym-contract";
 import {
   buildGymSpecProjection,
   validationReceiptSchema,
-} from "../tambo/gym-contract";
+} from "../gym-ui/gym-contract";
 import { canonicalSha256 } from "../pioneer/canonical";
 
 export function digest(value: unknown) {

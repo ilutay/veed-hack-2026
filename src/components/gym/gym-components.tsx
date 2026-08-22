@@ -17,7 +17,7 @@ import type {
   SafeExerciseFallbackProps,
   StimulusVariant,
   TargetedRetryGymProps,
-} from "@/lib/tambo/gym-contract";
+} from "@/lib/gym-ui/gym-contract";
 
 import { useCodexActions } from "./codex-action-context";
 import styles from "./gym.module.css";

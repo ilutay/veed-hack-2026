@@ -4,19 +4,20 @@ Pioneer Gym is an RL gym for humans: a learner types what they want to learn,
 does a short observable practice rep, sees the evidence, and then attempts a
 changed-action transfer challenge.
 
-The product has three deliberately separate authorities:
+The product separates two software authorities from a non-agent UI boundary:
 
 - **Codex** is the sole execution agent. Every Codex action is governed by a
   checked-in `codex/skills/pioneer-gym*/SKILL.md` file.
 - **Pioneer** is a text-only curriculum optimizer. P1 certifies teaching signal;
   P2 chooses the exact next eligible rep to maximize transferable learning gain
   per minute.
-- **Tambo** only renders registered components. It has no agent, tools, backend,
-  memory, or curriculum authority.
+- **The local UI boundary** verifies each Codex command and maps it to one
+  allowlisted React component. It has no agent, provider connection, memory, or
+  curriculum authority.
 
-The primary app is `/`. The gated `/taste-labs` route preserves the teammate
-Riso lesson-player work as an explicitly fixture-only design demo; it cannot
-start providers, write runs, or impersonate Codex.
+The primary app is `/`. The gated `/lesson` route plays one checked-in sample
+lesson through the browser's native video player. It does not generate a new
+video from the learner's prompt or start any provider.
 
 ## Local development
 
@@ -61,8 +62,8 @@ WORKFLOW_MODE=live scripts/with-env.sh npm run smoke:live:pioneer
 - `src/lib/pioneer/` is the standalone text-only Pioneer module and loopback E2E
   harness.
 - `src/lib/codex/` owns typed skill execution and the narrow TeamBox adapter.
-- `src/lib/tambo/` owns the registered-component contract and browser-side
-  receipt verification.
+- `src/lib/gym-ui/` owns the neutral registered-component contract and
+  browser-side command verification.
 - `ops/teambox/README.md` describes the reviewed Unix-socket deployment
   boundary. Its templates are not proof that a deployment happened.
 

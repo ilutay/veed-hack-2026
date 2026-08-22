@@ -1,6 +1,6 @@
 ---
 name: pioneer-gym
-description: "Run the Pioneer Gym human-learning loop with Codex as the sole execution agent, Pioneer as the bounded curriculum optimizer, and Tambo as the registered-component renderer."
+description: "Run the Pioneer Gym human-learning loop with Codex as the sole execution agent, Pioneer as the bounded curriculum optimizer, and a strict local registered-component boundary."
 ---
 
 # Pioneer Gym Orchestrator
@@ -24,8 +24,9 @@ binding. Use `pioneer-gym-next-decision` for every `decide_next` turn.
   invalid, unsafe, schema-drifted, evidence-mismatched, or otherwise infeasible
   recommendation, and must expose that veto in a receipt. When Pioneer is
   unavailable, a deterministic continuation must be visibly labeled fallback.
-- Tambo validates and renders a Codex-selected registered component. It has no
-  agent, thread ownership, tools, memory, or curriculum authority.
+- The local UI boundary validates and renders a Codex-selected registered
+  component. It has no agent, provider access, thread ownership, memory, or
+  curriculum authority.
 - The human is the learner. Never describe the software as training itself.
 
 ## Loop
