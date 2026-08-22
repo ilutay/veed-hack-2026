@@ -10,22 +10,9 @@ This project puts a VEED talking-head generator behind a Tambo agent: the user a
 - **Tambo mechanics** (scaffolding, `TamboProvider`, registration, threads, MCP): `npx skills add tambo-ai/tambo` installs the official `generative-ui` and `build-with-tambo` skills. Don't reinvent them.
 - **VEED endpoints, schemas, prices**: [codex/skills/videos/skills/veed-fal-api](../../../videos/skills/veed-fal-api/SKILL.md).
 
-## Status: registry-only runtime scaffolded at `ui/` (22 Aug 2026)
+## Status: nothing is scaffolded yet (22 Aug 2026)
 
-This lives in `veed-hack-2026` (Taste Labs). A React app now exists at **`ui/`**
-(repo root, branch `feat/tambo-integrate`) — not at `codex/skills/ui/`, which
-stays a skills namespace. The paths named below (`src/lib/tambo.ts`,
-`src/app/api/veed/route.ts`) still come from the Tambo Next.js quickstart and do
-**not** exist; `ui/` is Vite + React 19, so a VEED integration needs its own
-server, not a Next.js route handler.
-
-Note the app deliberately uses Tambo as a **registry and renderer only** —
-`TamboRegistryProvider` + `ComponentRenderer`, no `TamboProvider`, no API key,
-no threads, no tools, no MCP. The tool-registration guidance in the rest of this
-skill therefore does not apply as written: there is no Tambo agent to call a
-`TamboTool`. Codex drives the loop and components emit events through
-`src/codex/CodexActionProvider.tsx`. See `ui/README.md` for the verified
-behaviour of that seam.
+This lives in `veed-hack-2026` (Taste Labs), on the `ui` branch. `codex/skills/ui/` holds no code yet — the paths below (`src/lib/tambo.ts`, `src/app/api/veed/route.ts`, `src/components/`) come from the Tambo quickstart docs read 22 Aug 2026, **not** from this repo, and assume the app is rooted at `codex/skills/ui/`. **Re-ground this skill against the real scaffold** once `npx tambo create-app` (or `npx tambo full-send`) has run.
 
 The companion VEED skill lives in the other workstream at `codex/skills/videos/skills/veed-fal-api/`.
 
