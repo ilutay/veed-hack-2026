@@ -119,7 +119,8 @@ the web app's provider configuration in
 `/etc/pioneer-gym/pioneer-gym.env` with mode `0640`, owner `root`, group
 `pioneer-gym`. Do not put Codex credentials in that file. Copy the Caddy site
 into the host's Caddy configuration, validate with `caddy validate`, then enable
-the socket, gateway, Next, and Caddy.
+the socket, Next, and Caddy. The gateway service is static and starts only when
+the socket receives a connection; do not enable or start it directly.
 
 The shared demo access code, secure cookie, rate limits, and global provider
 budget are enforced by the Next application. Caddy limits request bodies and

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 
 import styles from "./gym.module.css";
@@ -69,17 +70,20 @@ export function DemoAccessGate({ children }: { children?: ReactNode }) {
   return (
     <main className={`${styles.gymRoot} ${styles.accessRoot}`}>
       <section className={styles.accessCard} aria-busy={state === "checking" || pending}>
-        <div className={styles.brand}>
-          <span className={styles.brandMark}>PG</span>
-          <span>
-            Pioneer Gym
-            <small>RL-style practice for humans</small>
-          </span>
+        <div className={styles.accessTopline}>
+          <div className={styles.brand}>
+            <span className={styles.brandMark}>PG</span>
+            <span>
+              Pioneer Gym
+              <small>Practice that adapts to you</small>
+            </span>
+          </div>
+          <Link className={styles.lessonLink} href="/lesson">Watch a real lesson</Link>
         </div>
         <p className={styles.eyebrow}>PRIVATE HACKATHON DEMO</p>
-        <h1>{state === "checking" ? "Checking your demo pass…" : "Enter the gym."}</h1>
+        <h1>{state === "checking" ? "Checking access…" : "Ready to practice?"}</h1>
         <p className={styles.accessIntro}>
-          Codex operates the session. Pioneer optimizes the curriculum. Tambo renders only registered components.
+          Enter the shared code to begin a short learning session that adapts after every decision.
         </p>
         {state === "locked" ? (
           <form className={styles.accessForm} onSubmit={unlock}>

@@ -53,10 +53,7 @@ export function TasteLabsApp() {
           <FixtureStage />
           <footer className="tasteFooter">
             <Link href="/">← Back to Pioneer Gym</Link>
-            <span>
-              Tambo renders registered components only. No Tambo agent,
-              backend, tools, or memory.
-            </span>
+            <span>Registered components render locally without tools or memory.</span>
           </footer>
         </div>
         <div aria-hidden="true" className="tasteGrain" />

@@ -1512,3 +1512,433 @@ input:focus-visible {
   .promptForm textarea,
   .textareaLabel textarea { transition: none; }
 }
+
+/* Monochrome editorial shell. Exercise mechanics remain visually distinct,
+   while the page itself reads as one focused workspace. */
+.gymRoot {
+  --gym-ink: #101010;
+  --gym-paper: #f1f0eb;
+  --gym-panel: #ffffff;
+  --gym-soft: #e9e8e2;
+  --gym-line: rgba(16, 16, 16, 0.22);
+  --gym-muted: #676762;
+  --gym-lime: #e6e6de;
+  --gym-coral: #b8b7b0;
+  --gym-blue: #d7d6cf;
+  --gym-violet: #c8c7c0;
+  background: var(--gym-paper);
+}
+
+.appShell {
+  width: min(1180px, calc(100% - 40px));
+  padding: 22px 0 56px;
+}
+
+.appHeader {
+  min-height: 54px;
+  padding: 0 0 14px;
+  border-bottom: 2px solid var(--gym-ink);
+}
+
+.brand {
+  gap: 10px;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+}
+
+.brandMark {
+  width: 30px;
+  height: 30px;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: 10px;
+}
+
+.brand small {
+  margin-top: 1px;
+  font-size: 8px;
+  letter-spacing: 0.14em;
+}
+
+.headerActions,
+.accessTopline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.headerActions {
+  color: var(--gym-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.lessonLink {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  border: 1px solid var(--gym-ink);
+  background: var(--gym-ink);
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.lessonLink:hover,
+.lessonLink:focus-visible {
+  background: white;
+  color: var(--gym-ink);
+}
+
+.journeyNav {
+  margin: 0;
+  padding: 0;
+  border-bottom: 1px solid var(--gym-line);
+  list-style: none;
+}
+
+.journeyStep {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  min-height: 48px;
+  align-content: center;
+  padding: 0 12px;
+  border-right: 1px solid var(--gym-line);
+  font-size: 9px;
+  letter-spacing: 0.11em;
+}
+
+.journeyStep:first-child {
+  border-left: 1px solid var(--gym-line);
+}
+
+.journeyStep::after {
+  display: none;
+}
+
+.journeyIndex {
+  display: inline;
+  width: auto;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--gym-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 8px;
+}
+
+.journeyStep[data-state="active"] {
+  background: var(--gym-ink);
+  color: white;
+}
+
+.journeyStep[data-state="active"] .journeyIndex,
+.journeyStep[data-state="complete"] .journeyIndex {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+}
+
+.journeyStep[data-state="complete"] {
+  color: var(--gym-ink);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.stage {
+  min-height: 560px;
+  border-color: var(--gym-ink);
+  border-radius: 0;
+  background: white;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.promptFrame,
+.exerciseFrame {
+  min-height: auto;
+  padding: clamp(28px, 5vw, 64px);
+}
+
+.promptFrame {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 30px;
+  align-items: start;
+}
+
+.promptIntro {
+  max-width: 760px;
+}
+
+.promptIntro h1 {
+  max-width: none;
+  margin: 9px 0 12px;
+  font-size: clamp(36px, 5vw, 58px);
+  letter-spacing: -0.045em;
+  line-height: 0.98;
+}
+
+.promptIntro > p:not(.eyebrow) {
+  max-width: 680px;
+  font-size: clamp(14px, 1.5vw, 18px);
+  line-height: 1.5;
+}
+
+.humanPolicyNote {
+  max-width: 680px;
+  margin-top: 20px;
+  padding: 12px 0 0;
+  border: 0;
+  border-top: 1px solid var(--gym-line);
+  border-radius: 0;
+  background: transparent;
+}
+
+.humanGlyph {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--gym-ink);
+  border-radius: 0;
+  background: transparent;
+  color: var(--gym-ink);
+  font-size: 10px;
+}
+
+.promptForm {
+  width: 100%;
+  padding: clamp(20px, 3vw, 30px);
+  border-radius: 0;
+  background: #f8f8f5;
+  box-shadow: none;
+}
+
+.promptForm textarea,
+.textareaLabel textarea,
+.reasoningPanel,
+.briefBar,
+.stimulusChoice,
+.fallbackOptions label,
+.layerEditor li {
+  border-radius: 0;
+}
+
+.promptForm textarea {
+  min-height: 128px;
+  border-color: var(--gym-ink);
+  background: white;
+  font-size: clamp(17px, 2vw, 23px);
+}
+
+.primaryButton {
+  min-height: 44px;
+  border-radius: 0;
+}
+
+.primaryButton:hover:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+  background: white;
+  color: var(--gym-ink);
+}
+
+.messageBanner,
+.errorBanner,
+.pendingCard,
+.rendererSkeleton div,
+.rendererFailure div {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.messageBanner,
+.errorBanner {
+  margin: 12px 0;
+}
+
+.pendingVeil {
+  background: rgba(241, 240, 235, 0.9);
+  backdrop-filter: blur(3px);
+}
+
+.pulseLine::after,
+.accessPulse::after {
+  background: var(--gym-ink);
+}
+
+.validationReceipt {
+  border-radius: 0;
+  background: var(--gym-soft);
+  box-shadow: none;
+}
+
+.receiptIcon {
+  border-radius: 0;
+}
+
+.adaptationReceipt,
+.transferDistance {
+  border-radius: 0;
+  background: var(--gym-soft);
+  box-shadow: none;
+}
+
+.accessRoot {
+  padding: 28px;
+}
+
+.accessCard {
+  width: min(700px, 100%);
+  padding: clamp(28px, 6vw, 58px);
+  border-radius: 0;
+  background: white;
+  box-shadow: none;
+}
+
+.accessCard > .eyebrow {
+  margin-top: 60px;
+}
+
+.accessCard h1 {
+  margin: 10px 0 12px;
+  font-size: clamp(38px, 7vw, 62px);
+  letter-spacing: -0.05em;
+  line-height: 0.98;
+}
+
+.accessForm input {
+  border-radius: 0;
+}
+
+button:focus-visible,
+textarea:focus-visible,
+input:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--gym-ink);
+  outline-offset: 3px;
+}
+
+@media (max-width: 760px) {
+  .appShell {
+    width: min(100% - 20px, 1180px);
+  }
+
+  .appHeader,
+  .headerActions,
+  .accessTopline {
+    align-items: flex-start;
+  }
+
+  .headerActions {
+    flex-direction: column-reverse;
+    gap: 7px;
+  }
+
+  .headerActions > span {
+    max-width: 230px;
+    text-align: right;
+  }
+
+  .journeyNav {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    overflow: hidden;
+  }
+
+  .journeyStep {
+    gap: 5px;
+    padding: 0 7px;
+  }
+
+  .stage {
+    border-radius: 0;
+  }
+
+  .promptFrame,
+  .exerciseFrame {
+    padding: 30px 20px;
+  }
+
+  .promptIntro h1 {
+    font-size: clamp(34px, 10vw, 48px);
+  }
+
+  .promptForm {
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .accessRoot {
+    padding: 10px;
+  }
+
+  .accessCard {
+    padding: 24px 20px;
+  }
+
+  .accessTopline {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .accessTopline .lessonLink {
+    width: 100%;
+  }
+
+  .accessCard > .eyebrow {
+    margin-top: 42px;
+  }
+
+  .appHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .headerActions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .headerActions > span {
+    max-width: none;
+    text-align: left;
+  }
+
+  .lessonLink {
+    width: 100%;
+  }
+
+  .journeyNav {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    overflow: hidden;
+  }
+
+  .journeyStep {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .journeyStep > span:last-child {
+    display: none;
+  }
+
+  .promptIntro h1 {
+    font-size: 36px;
+  }
+}

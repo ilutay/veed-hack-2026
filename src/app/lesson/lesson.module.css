@@ -1,0 +1,108 @@
+.lessonRoot {
+  min-height: 100vh;
+  padding: 24px;
+  color: #171714;
+  background: #f6f5f0;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(1180px, 100%);
+  min-height: 52px;
+  margin: 0 auto;
+  border-bottom: 1px solid #171714;
+}
+
+.brand,
+.backLink {
+  color: inherit;
+  font-weight: 800;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.brand {
+  letter-spacing: 0.12em;
+  text-decoration: none;
+}
+
+.brand:visited,
+.backLink:visited {
+  color: #514f49;
+}
+
+.lesson {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.38fr) minmax(0, 1fr);
+  gap: clamp(28px, 6vw, 88px);
+  align-items: start;
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  padding: clamp(40px, 8vw, 104px) 0;
+}
+
+.intro {
+  max-width: 390px;
+}
+
+.eyebrow {
+  margin: 0 0 14px;
+  color: #696761;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.intro h1 {
+  margin: 0;
+  font-size: clamp(42px, 6vw, 76px);
+  letter-spacing: -0.055em;
+  line-height: 0.96;
+  text-wrap: balance;
+}
+
+.intro > p:last-child {
+  margin: 24px 0 0;
+  color: #5f5d57;
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.video {
+  display: block;
+  width: 100%;
+  border: 1px solid #171714;
+  background: #171714;
+  box-shadow: 8px 8px 0 #171714;
+}
+
+.backLink:focus-visible,
+.brand:focus-visible,
+.video:focus-visible {
+  outline: 3px solid #2766d7;
+  outline-offset: 4px;
+}
+
+@media (max-width: 760px) {
+  .lessonRoot {
+    padding: 16px;
+  }
+
+  .lesson {
+    grid-template-columns: 1fr;
+    padding-top: 40px;
+  }
+
+  .backLink {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .video {
+    box-shadow: 5px 5px 0 #171714;
+  }
+}

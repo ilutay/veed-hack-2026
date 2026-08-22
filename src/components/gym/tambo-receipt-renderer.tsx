@@ -63,7 +63,7 @@ function RendererSkeleton() {
     <div className={styles.rendererSkeleton} aria-live="polite">
       <div>
         <strong>Mounting the Codex-selected component…</strong>
-        <p>Tambo is resolving the registered render receipt locally.</p>
+        <p>The registered exercise is loading.</p>
       </div>
     </div>
   );
@@ -135,7 +135,7 @@ export function TamboReceiptRenderer({ command }: { command: CodexUiCommand }) {
               ? "Codex selected invalid component props."
               : "The Codex render receipt did not match the exercise."}
           </strong>
-          <p>The command was stopped before Tambo. No unvalidated exercise was shown.</p>
+          <p>The command was stopped before rendering. No unvalidated exercise was shown.</p>
           <button
             className={styles.primaryButton}
             disabled={pending}

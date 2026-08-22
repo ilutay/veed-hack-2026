@@ -4,13 +4,13 @@ const ACCESS_CODE = "pioneer-e2e";
 
 async function unlock(page: import("@playwright/test").Page) {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Enter the gym." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ready to practice?" })).toBeVisible();
   await page.getByLabel("Shared access code").fill(ACCESS_CODE);
   await page.getByRole("button", { name: "Enter Pioneer Gym" }).click();
-  await expect(page.getByRole("heading", { name: "Train the decision, not the answer." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What do you want to learn?" })).toBeVisible();
 }
 
-test("a human completes the authenticated Pioneer curriculum journey without a Tambo backend", async ({ page }) => {
+test("a human completes the authenticated Pioneer curriculum journey through the local renderer", async ({ page }) => {
   const externalRequests: string[] = [];
   page.on("request", (request) => {
     const url = new URL(request.url());
@@ -19,19 +19,19 @@ test("a human completes the authenticated Pioneer curriculum journey without a T
 
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: "Enter the gym." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ready to practice?" })).toBeVisible();
   await page.getByLabel("Shared access code").fill("wrong-code");
   await page.getByRole("button", { name: "Enter Pioneer Gym" }).click();
   await expect(page.getByText("The demo access code is invalid.")).toBeVisible();
 
   await page.getByLabel("Shared access code").fill(ACCESS_CODE);
   await page.getByRole("button", { name: "Enter Pioneer Gym" }).click();
-  await expect(page.getByRole("heading", { name: "Train the decision, not the answer." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What do you want to learn?" })).toBeVisible();
 
   await page.getByLabel("What do you want to learn?").fill(
     "Teach me to make short-form product video hierarchy decisions I can defend.",
   );
-  await page.getByRole("button", { name: "Build my first rep" }).click();
+  await page.getByRole("button", { name: "Start practicing" }).click();
 
   await expect(page.getByRole("heading", { name: /Which frame makes the product decision/ })).toBeVisible();
   await page.getByRole("radio", { name: /Frame B/ }).click();
@@ -50,14 +50,19 @@ test("a human completes the authenticated Pioneer curriculum journey without a T
   await page.getByRole("button", { name: "Submit held-out transfer" }).click();
 
   await expect(page.getByRole("heading", { name: "The decision transferred to a changed action" })).toBeVisible();
-  await expect(page.getByText("transfer shown", { exact: true })).toBeVisible();
-  await expect(page.getByText("Tambo: registered-component renderer only")).toBeVisible();
+  await expect(
+    page.getByRole("listitem", { name: "5. Transfer: complete" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("This is transfer evidence, not a guarantee of learning."),
+  ).toBeVisible();
+  await expect(page.getByText(/tambo/i)).toHaveCount(0);
   await page.getByRole("button", { name: "Start another session" }).click();
   await expect(page.getByRole("heading", { name: "What do you want to learn next?" })).toBeVisible();
   expect(externalRequests).toEqual([]);
 });
 
-test("invalid dynamic props stop before Tambo and recover only through the certified fallback", async ({ page }) => {
+test("invalid dynamic props stop before the local renderer and recover only through the certified fallback", async ({ page }) => {
   await unlock(page);
 
   let gymResponseCount = 0;
@@ -77,7 +82,7 @@ test("invalid dynamic props stop before Tambo and recover only through the certi
   });
 
   await page.getByLabel("What do you want to learn?").fill("Teach me visual hierarchy.");
-  await page.getByRole("button", { name: "Build my first rep" }).click();
+  await page.getByRole("button", { name: "Start practicing" }).click();
   await expect(page.getByText("Codex selected invalid component props.", { exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "Ask Codex for a safe path" }).click();
@@ -96,7 +101,7 @@ test("independent learner pages start distinct gym sessions", async ({ browser }
   await unlock(first);
   await secondContext.addCookies(await firstContext.cookies());
   await second.goto("/");
-  await expect(second.getByRole("heading", { name: "Train the decision, not the answer." })).toBeVisible();
+  await expect(second.getByRole("heading", { name: "What do you want to learn?" })).toBeVisible();
 
   for (const page of [first, second]) {
     page.on("request", (request) => {
@@ -115,8 +120,8 @@ test("independent learner pages start distinct gym sessions", async ({ browser }
   }
 
   await Promise.all([
-    first.getByRole("button", { name: "Build my first rep" }).click(),
-    second.getByRole("button", { name: "Build my first rep" }).click(),
+    first.getByRole("button", { name: "Start practicing" }).click(),
+    second.getByRole("button", { name: "Start practicing" }).click(),
   ]);
   await expect.poll(() => sessionIds.length).toBe(2);
   expect(new Set(sessionIds).size).toBe(2);
@@ -124,29 +129,30 @@ test("independent learner pages start distinct gym sessions", async ({ browser }
   await secondContext.close();
 });
 
-test("Taste Labs is gated and can only open the tracked fixture", async ({ page }) => {
+test("the gated sample lesson exposes a real native-video asset", async ({ page }) => {
   const externalRequests: string[] = [];
   page.on("request", (request) => {
     const url = new URL(request.url());
     if (url.host !== "127.0.0.1:3100") externalRequests.push(request.url());
   });
 
-  await page.goto("/taste-labs");
-  await expect(page.getByRole("heading", { name: "Enter the gym." })).toBeVisible();
+  await page.goto("/lesson");
+  await expect(page.getByRole("heading", { name: "Ready to practice?" })).toBeVisible();
   await page.getByLabel("Shared access code").fill(ACCESS_CODE);
   await page.getByRole("button", { name: "Enter Pioneer Gym" }).click();
-  await expect(page.getByRole("heading", { name: "What do you want to learn?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "How the dot-com bubble formed" })).toBeVisible();
 
-  await page.getByLabel("Learning topic").fill("Teach me why bubbles burst");
-  await page.getByRole("button", { name: "Open fixture" }).click();
-  await expect(
-    page.getByRole("heading", { name: "The Dot-Com Bubble in 15 Seconds" }),
-  ).toBeVisible();
-  await expect(page.getByText("TRACKED FIXTURE / fixture-dotcom")).toBeVisible();
-
-  const mutation = await page.request.post(
-    "/api/taste-labs/run/fixture-dotcom",
+  const video = page.locator("video[controls]");
+  await expect(video).toHaveCount(1);
+  await expect(video.locator("source")).toHaveAttribute(
+    "src",
+    "/media/dotcom-lesson.mp4",
   );
-  expect(mutation.status()).toBe(405);
+  await expect(video.locator("source")).toHaveAttribute("type", "video/mp4");
+
+  const media = await page.request.get("/media/dotcom-lesson.mp4");
+  expect(media.status()).toBe(200);
+  expect(media.headers()["content-type"]).toContain("video/mp4");
+  await expect(page.getByText(/tambo/i)).toHaveCount(0);
   expect(externalRequests).toEqual([]);
 });

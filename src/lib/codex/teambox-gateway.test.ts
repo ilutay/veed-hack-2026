@@ -9,6 +9,7 @@ import { runCodexAction } from "./runner";
 import { TeamboxAppServerCodexClient } from "./teambox-app-server-client";
 import {
   handleTeamboxActionValue,
+  isAcceptedTeamboxGatewayAddress,
   startTeamboxGatewayServer,
   type TeamboxGatewayActionRunner,
 } from "./teambox-gateway-server";
@@ -172,6 +173,21 @@ describe("TeamBox action allowlist", () => {
 });
 
 describe("TeamBox Unix gateway", () => {
+  it.each([
+    ["path listener with a Unix path", { path: "/run/test.sock" }, "/run/test.sock", true],
+    ["path listener without an address", { path: "/run/test.sock" }, null, false],
+    ["adopted fd with a Unix path", { fd: 3 }, "/run/test.sock", true],
+    ["adopted systemd fd without a discoverable path", { fd: 3 }, null, true],
+    [
+      "adopted TCP fd",
+      { fd: 3 },
+      { address: "127.0.0.1", family: "IPv4", port: 3000 },
+      false,
+    ],
+  ] as const)("accepts only an AF_UNIX %s", (_label, listen, address, expected) => {
+    expect(isAcceptedTeamboxGatewayAddress(listen, address)).toBe(expected);
+  });
+
   it("serves exactly one framed action over AF_UNIX", async () => {
     const directory = await mkdtemp(join(tmpdir(), "pioneer-gym-gateway-"));
     const socketPath = join(directory, "action.sock");
