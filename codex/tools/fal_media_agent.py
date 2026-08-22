@@ -99,8 +99,7 @@ class FalQueueClient:
         )
 
     def status(self, status_url: str) -> dict[str, Any]:
-        separator = "&" if "?" in status_url else "?"
-        return self._json_request("GET", f"{status_url}{separator}logs=1", None)
+        return self._json_request("GET", status_url, None)
 
     def result(self, response_url: str) -> dict[str, Any]:
         return self._json_request("GET", response_url, None)
@@ -178,6 +177,12 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--voice", default=os.environ.get("FAL_TTS_VOICE", "Friendly_Person"))
     parser.add_argument("--emotion", default=os.environ.get("FAL_TTS_EMOTION", "happy"))
     parser.add_argument("--language", default=os.environ.get("FAL_TTS_LANGUAGE", "en"))
+    parser.add_argument(
+        "--speed",
+        default=float(os.environ.get("FAL_TTS_SPEED", "1.2")),
+        type=float,
+        help="MiniMax voice_setting.speed multiplier. 1.0 is normal pace; >1.0 talks faster.",
+    )
     parser.add_argument("--image-size", default=os.environ.get("FAL_IMAGE_SIZE", "landscape_16_9"))
     parser.add_argument(
         "--image-steps",
@@ -186,13 +191,22 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--max-workers",
-        default=int(os.environ.get("FAL_MAX_WORKERS", "7")),
+        default=int(os.environ.get("FAL_MAX_WORKERS", "0")),
         type=int,
+        help=(
+            "Thread pool size. 0 (default) sizes it to the job count — one "
+            "worker per slide plus the voiceover and intro-audio jobs — so no "
+            "job waits for a free thread before it is even submitted."
+        ),
     )
     parser.add_argument(
         "--poll-interval-seconds",
-        default=float(os.environ.get("FAL_POLL_INTERVAL_SECONDS", "2")),
+        default=float(os.environ.get("FAL_POLL_INTERVAL_SECONDS", "0.25")),
         type=float,
+        help=(
+            "Queue poll granularity. z-image/turbo finishes in well under a "
+            "second, so a coarse interval is pure added latency per asset."
+        ),
     )
     parser.add_argument(
         "--timeout-seconds",
@@ -238,6 +252,7 @@ def run_agent(
         voice=args.voice,
         emotion=args.emotion,
         language=args.language,
+        speed=args.speed,
     )
     intro_payload = (
         build_intro_audio_payload(
@@ -247,6 +262,7 @@ def run_agent(
             emotion=args.emotion,
             language=args.language,
             target_seconds=args.intro_seconds,
+            speed=args.speed,
         )
         if lesson.get("intro")
         else None
@@ -268,7 +284,16 @@ def run_agent(
                 base_url=os.environ.get("FAL_BASE_URL", "https://queue.fal.run"),
             )
 
-    image_workers = min(max(1, args.max_workers), max(1, len(slide_payloads)))
+    # Every job is a network wait, not CPU work, so the pool only needs to be
+    # big enough that nothing queues behind a thread. Sizing it below the job
+    # count starves the last submissions: at the old default of 7 the six slides
+    # and the voiceover filled the pool and the intro-audio job sat unsubmitted
+    # until a slide finished, adding its full latency to the stage.
+    audio_jobs = 1 + (1 if intro_payload is not None else 0)
+    total_jobs = len(slide_payloads) + audio_jobs
+    max_workers = args.max_workers if args.max_workers > 0 else total_jobs
+    max_workers = max(1, min(max_workers, total_jobs))
+    image_workers = min(max(1, max_workers - audio_jobs), max(1, len(slide_payloads)))
     if args.mode == "dry-run":
         slide_assets = [
             dry_run_image_asset(item, paths)
@@ -278,7 +303,7 @@ def run_agent(
         intro_audio_asset = dry_run_intro_audio_asset(paths) if intro_payload is not None else None
     else:
         assert client is not None
-        with concurrent.futures.ThreadPoolExecutor(max_workers=args.max_workers) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             image_futures = [
                 executor.submit(
                     generate_slide_image,
@@ -582,6 +607,7 @@ def build_voice_payload(
     voice: str,
     emotion: str,
     language: str,
+    speed: float,
 ) -> dict[str, Any]:
     segments = [
         {
@@ -603,6 +629,7 @@ def build_voice_payload(
         "voice": voice,
         "emotion": emotion,
         "language": language,
+        "speed": speed,
         "segments": segments,
         "target_duration_seconds": sum(
             int(segment["target_duration_seconds"] or estimate_duration_seconds(segment["text"]))
@@ -613,6 +640,7 @@ def build_voice_payload(
             "voice_setting": {
                 "voice_id": voice,
                 "emotion": emotion,
+                "speed": speed,
             },
             "language_boost": language_boost(language),
             "output_format": "url",
@@ -628,6 +656,7 @@ def build_intro_audio_payload(
     emotion: str,
     language: str,
     target_seconds: int,
+    speed: float,
 ) -> dict[str, Any]:
     """Payload for the short talking-head intro clip, kept separate from the
     combined slide narration so it can be generated and swapped independently.
@@ -639,12 +668,14 @@ def build_intro_audio_payload(
         "voice": voice,
         "emotion": emotion,
         "language": language,
+        "speed": speed,
         "target_duration_seconds": target_seconds,
         "payload": {
             "prompt": text,
             "voice_setting": {
                 "voice_id": voice,
                 "emotion": emotion,
+                "speed": speed,
             },
             "language_boost": language_boost(language),
             "output_format": "url",

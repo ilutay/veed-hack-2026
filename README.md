@@ -1,65 +1,74 @@
-Taste Labs
+# Pioneer Gym
 
-# Educational Video Workflow Scaffold
+Pioneer Gym is an RL gym for humans: a learner types what they want to learn,
+does a short observable practice rep, sees the evidence, and then attempts a
+changed-action transfer challenge.
 
-This repository contains a first-pass Codex workflow structure for generating educational video content from a learning topic.
+The product has three deliberately separate authorities:
 
-The workflow is intentionally contract-first:
+- **Codex** is the sole execution agent. Every Codex action is governed by a
+  checked-in `codex/skills/pioneer-gym*/SKILL.md` file.
+- **Pioneer** is a text-only curriculum optimizer. P1 certifies teaching signal;
+  P2 chooses the exact next eligible rep to maximize transferable learning gain
+  per minute.
+- **Tambo** only renders registered components. It has no agent, tools, backend,
+  memory, or curriculum authority.
 
-1. Research a topic and produce a structured lesson script.
-2. Generate a short talking-head intro: a 5-second audio clip via fal, then a
-   video via the VEED Fabric MCP server (see `AGENTS.md` → "MCP servers").
-3. Generate slide images in parallel.
-4. Generate voiceover video or timed narration assets.
-5. Assemble the outputs into a webpage with slides and voiceover.
+The primary app is `/`. The gated `/taste-labs` route preserves the teammate
+Riso lesson-player work as an explicitly fixture-only design demo; it cannot
+start providers, write runs, or impersonate Codex.
 
-## Structure
-
-```text
-codex/
-|-- workflows/
-|   `-- educational-video.yaml
-|-- subagents/
-|   |-- orchestrator-agent.md
-|   |-- research-script-agent.md
-|   |-- talking-head-agent.md
-|   |-- slide-image-agent.md
-|   |-- voiceover-agent.md
-|   |-- page-assembly-agent.md
-|   `-- integration-qa-agent.md
-|-- skills/
-|   |-- educational-video-workflow/
-|   |-- topic-research-script/
-|   |-- veed-talking-head/
-|   |-- slide-image-generation/
-|   |-- voiceover-video-generation/
-|   |-- slideshow-video-assembly/
-|   `-- learning-page-assembly/
-|-- contracts/
-|   |-- lesson-script.schema.json
-|   |-- asset-manifest.schema.json
-|   `-- webpage-build.schema.json
-|-- tools/
-|   |-- fal_media_agent.py
-|   `-- assemble_slideshow_video.py
-`-- examples/
-    |-- work-order.example.json
-    |-- fixture-run/          # synthetic placeholders for schema tests
-    `-- sample-slides-run/    # real fal output: slides, voiceover, timings
-```
-
-The `codex/skills/*/SKILL.md` files are written so they can later be promoted into real Codex skills. The `codex/subagents/*.md` files define the specialized agent briefs and expected handoffs.
-
-## Rendering the video locally
-
-`codex/examples/sample-slides-run/` is a finished content-generation stage, so
-the ffmpeg assembly step runs offline with no credentials:
+## Local development
 
 ```bash
-python3 codex/tools/assemble_slideshow_video.py \
-  --content-dir codex/examples/sample-slides-run/02-content-generation \
-  --output artifacts/educational-video/sample/03-video/lesson-video.mp4
+npm ci
+cp .env.example .env.local
+npm run dev
 ```
 
-See `codex/skills/slideshow-video-assembly/SKILL.md` for the flags and the
-timing-fit policies.
+Set `GYM_ACCESS_CODE_SHA256` to the SHA-256 digest of the shared demo code and
+set `GYM_COOKIE_SECRET` to at least 32 random bytes. Keep `WORKFLOW_MODE=dry-run`
+for local development. Follow `AGENTS.md` before any provider-backed stage and
+never read or commit `.env.local`.
+
+## Verification
+
+```bash
+npm run typecheck
+npm run lint
+npm test
+npm run test:e2e
+npm run test:browser
+npm run test:timing
+npm run build
+./node_modules/.bin/tsc -p ops/teambox/tsconfig.gateway.json
+python3 -m unittest discover -s tests -p 'test_*.py'
+```
+
+The default suite is offline. The Pioneer live smoke is opt-in and must only be
+run with explicit current-stage approval:
+
+```bash
+WORKFLOW_MODE=live scripts/with-env.sh npm run smoke:live:pioneer
+```
+
+## Architecture and deployment
+
+- `docs/pioneer-gym-architecture.md` is the authoritative product and trust
+  boundary.
+- `src/lib/gym/` owns the bounded session engine, curriculum loop, idempotency,
+  and receipts.
+- `src/lib/pioneer/` is the standalone text-only Pioneer module and loopback E2E
+  harness.
+- `src/lib/codex/` owns typed skill execution and the narrow TeamBox adapter.
+- `src/lib/tambo/` owns the registered-component contract and browser-side
+  receipt verification.
+- `ops/teambox/README.md` describes the reviewed Unix-socket deployment
+  boundary. Its templates are not proof that a deployment happened.
+
+## Educational-video assets
+
+The earlier educational-video workflow, fixtures, Python tools, and offline
+player-timing tests remain available under `codex/`, `page/`, and `tests/`.
+They are supporting source material, not a second web runtime or agent control
+plane for Pioneer Gym.

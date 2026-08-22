@@ -10,6 +10,12 @@ Use this skill for the short presenter intro generated from
 15-second lesson format normally omits it — skip this skill entirely when
 `lesson-script.json` has no `intro` field.
 
+Start this skill's MCP tool sequence in parallel with the
+`fal_media_agent.py` content-generation run (slide images + voiceover), not
+after it finishes — the VEED render alone takes 1-2 minutes, and neither
+stage depends on the other's output. See "Content Generation Concurrency" in
+`../educational-video-workflow/references/workflow-contract.md`.
+
 The stage has two parts, run through two different providers:
 
 1. **Intro audio (fal)** — already produced for you by
@@ -28,11 +34,17 @@ The stage has two parts, run through two different providers:
 - In `dry-run`, do not call the `veed-fabric` MCP server at all. Emit the
   intended tool-call sequence and arguments (see the contract) as a JSON
   payload plus placeholder asset metadata.
-- In `test` or `live`, drive the MCP tools in order — `list_characters` →
-  `list_voices` → `confirm_fabric_video` → `create_fabric_video` →
-  `get_generation_status` — and only call `create_fabric_video` after a user
-  or work-order has confirmed the character/voice/cost. Poll
-  `get_generation_status` until `completed` or `error`.
+- In `test` or `live`, use the default character and voice below —
+  `character_id: "character-19"`, `voice_id: "en-CA-LiamNeural"` — instead of
+  prompting a human through `list_characters`/`list_voices` each run. Skip
+  straight to `confirm_fabric_video` with these ids unless the work order (or
+  a user, mid-conversation) names a different character/voice, in which case
+  use `list_characters`/`list_voices` to resolve that request instead. Do not
+  skip `confirm_fabric_video` even with the default — it is still the only
+  place the cost is shown before credits are spent, so still get explicit
+  confirmation of the estimate before calling `create_fabric_video`. Then
+  drive `create_fabric_video` → `get_generation_status`, polling until
+  `completed` or `error`.
 - Download the resulting video URL to `talking-head-intro.mp4` and write
   `talking-head-metadata.json` with the job id, chosen character/voice, and
   credit cost.

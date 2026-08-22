@@ -1,171 +1,107 @@
 ---
 name: tambo-veed-app
-description: How this project wires VEED video generation into a Tambo generative-UI React app — the non-blocking submit/poll shape, request-object props instead of generated URLs, the mandatory server route for FAL_KEY, the cost gate, and the streaming/expiry gotchas. Use when registering a TamboComponent or TamboTool that touches video, when writing `src/lib/tambo.ts` or an `/api/veed` route, when a chat turn hangs while a video renders, when a `<video>` prop is undefined, when deciding whether a tool should be streamable, or when the agent is about to spend money on a generation. Covers only the Tambo×VEED seams — install `npx skills add tambo-ai/tambo` for Tambo mechanics and see the companion `veed-fal-api` skill in `codex/skills/videos/skills/` for endpoint schemas and prices.
+description: How this project wires VEED video generation into a Tambo registry-only React app — Codex owns the event loop, ComponentRenderer mounts pre-made views, props are request ids not video URLs, FAL_KEY stays server-only, and the UI never awaits a render. Use when registering a TamboComponent, editing src/lib/registry.tsx, server/index.ts, or /api/run, when a chat turn would hang on a video render, or when a component is about to spend money on a generation. Install `npx skills add tambo-ai/tambo` only for renderer/registry mechanics — this repo does not use Tambo Cloud. Companion endpoint docs live in `codex/skills/videos/skills/veed-fal-api`.
 ---
 
-# Tambo × VEED
+# Tambo × VEED (registry only)
 
-This project puts a VEED talking-head generator behind a Tambo agent: the user asks in chat, the agent picks a component and calls a tool, a video renders. The two halves are individually well documented — the failure modes all live in the seam between them, and that is all this skill covers.
+Taste Labs renders lessons with Tambo's **low-level registry and renderer**, not Tambo Cloud. Codex (the Vite React app + Node API + Python pipeline) decides which component to show and when to start a run. `@tambo-ai/react@1.3.0` supplies `TamboRegistryProvider` and `ComponentRenderer` only.
 
-- **Tambo mechanics** (scaffolding, `TamboProvider`, registration, threads, MCP): `npx skills add tambo-ai/tambo` installs the official `generative-ui` and `build-with-tambo` skills. Don't reinvent them.
-- **VEED endpoints, schemas, prices**: [codex/skills/videos/skills/veed-fal-api](../../../videos/skills/veed-fal-api/SKILL.md).
+Pinned install:
 
-## Status: nothing is scaffolded yet (22 Aug 2026)
+```bash
+npm install @tambo-ai/react@1.3.0 zod@^4.0.0 zod-to-json-schema@^3.25.1
+```
 
-This lives in `veed-hack-2026` (Taste Labs), on the `ui` branch. `codex/skills/ui/` holds no code yet — the paths below (`src/lib/tambo.ts`, `src/app/api/veed/route.ts`, `src/components/`) come from the Tambo quickstart docs read 22 Aug 2026, **not** from this repo, and assume the app is rooted at `codex/skills/ui/`. **Re-ground this skill against the real scaffold** once `npx tambo create-app` (or `npx tambo full-send`) has run.
+Docs: [React SDK](https://docs.tambo.co/reference/react-sdk), [ComponentRenderer](https://docs.tambo.co/reference/react-sdk/providers#componentrenderer).
 
-The companion VEED skill lives in the other workstream at `codex/skills/videos/skills/veed-fal-api/`.
+## Layout (this repo, 22 Aug 2026)
+
+App lives at the worktree root, not under `codex/skills/ui/`.
+
+| Path                                                                         | Role                                                                        |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `src/main.tsx`                                                               | Vite entry. `/` = workflow, `/demo` = fixture.                              |
+| `index.html`                                                                 | Tilt Neon via Google Fonts. `src/styles/riso.css` imported from `main.tsx`. |
+| `src/lib/registry.tsx`                                                       | `lessonComponents` + `LessonRuntime` (`TamboRegistryProvider`).             |
+| `src/lib/timing.ts`                                                          | Pure `buildBoundaries`. `tests/test_player_timing.mjs` imports this.        |
+| `src/components/LessonApp.tsx`                                               | Registry + `CodexActionProvider` + `ComponentRenderer`.                     |
+| `src/components/CodexActionProvider.tsx`                                     | `dispatch({ type, payload })` → `POST /api/codex/action`.                   |
+| `src/components/{PromptComposer,LessonPlayer,NextChoices,TasteFeedback}.tsx` | Pre-made views. Look from `docs/riso-system.md`.                            |
+| `server/index.ts`                                                            | Event loop + run receipts. Vite proxies `/api` here. Never fal in the UI.   |
+| `POST /api/run`                                                              | `{ status: "submitted", run_id }` in ~1s.                                   |
+| `GET /api/run/:id`                                                           | Status + script/manifest. 404 if unknown.                                   |
+| `GET /api/run/:id/file/*`                                                    | Serves run assets for the player.                                           |
+
+`page/` remains the design-source / static harness until LessonPlayer is proven. Do not delete it.
+
+## Do not configure
+
+This app must not mount Tambo Cloud. `rg` on the names below should only hit comments or this skill:
+
+- Tambo Cloud's root provider (the one that takes an API key)
+- Tambo thread input / `.submit()`
+- Tambo tools and MCP servers (pass `tools={[]}` `mcpServers={[]}`)
+- Any `VITE_TAMBO_*`, `NEXT_PUBLIC_TAMBO_*`, or Tambo API key env var
+- Direct Pioneer-to-Tambo calls (there is no Pioneer here — the analogue is the educational-video pipeline / fal)
 
 ## The rule everything else follows from
 
-**Never await a VEED generation inside a Tambo tool.**
+**Never await a VEED / fal generation inside the UI event loop.**
 
-A Tambo tool is awaited inline while the assistant's turn streams. A fabric render is duration-proportional — minutes of wall clock for a minute of audio. `tool: async () => await fal.subscribe(...)` therefore holds a chat turn open for minutes and looks like a hang. (Whether Tambo enforces a hard tool timeout is unverified — design non-blocking regardless, and check before relying on a long await.)
-
-The shape that works:
+`POST /api/codex/action` and `POST /api/run` return a **receipt** (`run_id`) immediately. `LessonPlayer` polls `GET /api/run/[id]` until `asset-manifest.json` is readable, then mounts. Dry-run copies the tracked fixture; it does not call fal.
 
 ```
-user message
-  → tool  →  POST /api/veed  →  fal.queue.submit()  →  returns { request_id } in ~1s
-  → agent renders <TalkingVideo request_id={...} />
-  → the component polls /api/veed/[request_id] until COMPLETED
+topic typed
+  → dispatch topic_submitted
+  → POST /api/codex/action → startRun() → { run_id } in ~1s
+  → blocks: [ LessonPlayer { run_id } ]
+  → ComponentRenderer mounts LessonPlayer
+  → LessonPlayer polls GET /api/run/[id] until ready
 ```
-
-The tool returns a **receipt**, not a video. The component owns the waiting.
-
-## Why the server route is mandatory
-
-`TamboProvider` runs in the browser (`"use client"` on Next.js), so anything a Tambo tool does is client-side. `FAL_KEY` must never reach a browser bundle — no `NEXT_PUBLIC_FAL_KEY`, ever. The tool calls **our** route; only the route holds the key and talks to fal.
-
-```ts
-// src/lib/tools/veed.ts  — runs in the browser
-export const generateTalkingVideoTool: TamboTool = {
-  name: "generate_talking_video",
-  description:
-    "Start rendering a talking-head video from a still image and an audio track. Returns a job id immediately — the video is NOT ready when this returns.",
-  tool: async ({ image_url, audio_url, resolution }) => {
-    const res = await fetch("/api/veed", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ image_url, audio_url, resolution }),
-    });
-    const body = await res.json();
-    // 409 is the cost gate, not a failure — return it so the agent can quote the
-    // price and ask. Throwing here would strip the numbers the question needs.
-    if (res.status === 409) return body;
-    if (!res.ok) throw new Error(`veed: HTTP ${res.status}`);
-    return body;
-  },
-  inputSchema: z.object({
-    image_url: z.string().describe("Public URL of the still image of the subject"),
-    audio_url: z.string().describe("Public URL of the speech audio; sets the video's length"),
-    resolution: z.enum(["720p", "480p"]).describe("Use 480p unless the user asks for final quality"),
-  }),
-  // Both branches must be declarable, or the confirmation path fails validation.
-  outputSchema: z.discriminatedUnion("status", [
-    z.object({
-      status: z.literal("submitted"),
-      request_id: z.string(),
-      seconds: z.number(),
-      estimated_cost_usd: z.number(),
-    }),
-    z.object({
-      status: z.literal("confirmation_required"),
-      seconds: z.number(),
-      estimated_cost_usd: z.number(),
-    }),
-  ]),
-  // NOTE: no `annotations` — see "Never streamable" below.
-};
-```
-
-## Never streamable
-
-Do **not** put `annotations: { tamboStreamableHint: true }` on any VEED tool. Streamable tools are invoked repeatedly as arguments stream in; Tambo's own docs say not to use the hint on tools with side effects or API calls. Here each repeat is a *separately billed generation*. The hint is for idempotent state updates only.
 
 ## Props are a request, not a result
 
-Tambo's `component-data-props` guidance: response time scales with the token count of the props the model has to generate. Worse here — a model asked for `video_url` will **invent** one.
-
 ```tsx
-// ✅ small, and the model cannot fabricate the payload
-const TalkingVideoProps = z
-  .object({
-    request_id: z.string().describe("Job id returned by generate_talking_video"),
-  })
-  .describe("Shows render progress, then plays the finished talking-head video");
-
-// ❌ never — the model has no way to know this and will hallucinate a URL
-z.object({ video_url: z.string(), duration: z.number() });
-```
-
-The component fetches its own data from `/api/veed/[request_id]`. Same rule for any list of past renders: generate a *query* (`{ limit, since }`), not the rows.
-
-## Cost gate — the agent now decides when to spend
-
-The model chooses when to call the tool, and output length is uncapped input-audio length. At 720p that is $0.15/second with no ceiling. Gate it **server-side**, where the user can't be talked past it:
-
-```ts
-// src/app/api/veed/route.ts — server only; FAL_KEY lives here
-const RATE = { "720p": 0.15, "480p": 0.08 };          // USD per second
-// $10 = ~66s at 720p, ~125s at 480p. Passes a normal talking-head clip;
-// stops a 3-minute podcast ($27 at 720p). A cap that trips on every real
-// input just teaches people to delete it — tune, but keep one.
-const MAX_AUTO_SPEND_USD = 10.0;
-
-const seconds = await probeAudioDuration(audio_url);   // see note below
-const cost = seconds * RATE[resolution];
-if (cost > MAX_AUTO_SPEND_USD) {
-  return Response.json(
-    { status: "confirmation_required", seconds, estimated_cost_usd: +cost.toFixed(2) },
-    { status: 409 },
-  );
-}
-const { request_id } = await fal.queue.submit("veed/fabric-1.0", {
-  input: { image_url, audio_url, resolution },
+// ✅ small, cannot fabricate a payload
+LessonPlayerSchema = z.object({
+  run_id: z.string().optional(),
+  runBase: z.string().optional(),
 });
-return Response.json({
-  status: "submitted",
-  request_id,
-  seconds,
-  estimated_cost_usd: +cost.toFixed(2),
-});
+
+// ❌ the model (or Codex) must not invent a URL
+z.object({ video_url: z.string() });
 ```
 
-`probeAudioDuration` and `useVeedJob` (below) are placeholders — nothing implements them yet. Note that the obvious implementation, shelling out to `ffprobe`, spawns a subprocess and **is not available on most serverless/edge runtimes**. On Vercel edge or similar, read the duration client-side from an `<audio>` element, decode the header in the route, or run this route on a Node runtime.
+The player fetches its own data from `/api/run/[id]`. Same for NextChoices and TasteFeedback: they take `run_id`, not the A/B/C copy or a generated list of chips (chips are the taste-profile enum).
 
-Surface `estimated_cost_usd` in the component so the spend is visible in the thread. A 409 is a normal outcome — have the agent relay it and ask, not retry.
+## Event loop
 
-Also route redubs correctly: if the user already has a video, `veed/lipsync` does the same job for ~1/22nd the cost. Cheapest correct endpoint wins — the table is in [codex/skills/videos/skills/veed-fal-api](../../../videos/skills/veed-fal-api/SKILL.md).
+`CodexActionProvider` is local. Registered components emit:
 
-## Two rendering gotchas
+| type              | payload                      | next blocks (dry-run)          |
+| ----------------- | ---------------------------- | ------------------------------ |
+| `topic_submitted` | `{ topic }`                  | `LessonPlayer { run_id }`      |
+| `playback_ended`  | `{ run_id }`                 | `LessonPlayer` + `NextChoices` |
+| `choice_selected` | `{ run_id, label: A\|B\|C }` | `TasteFeedback { run_id }`     |
+| `taste_reaction`  | `{ run_id, reaction }`       | `PromptComposer`               |
 
-**Props are `undefined` while streaming** — all of them, required included. `<video src={undefined}>` is where this shows up as a visible bug. Gate on stream status, not truthiness:
+Reactions are the `history.reactions` enum in `codex/contracts/taste-profile.schema.json`.
 
-```tsx
-function TalkingVideo({ request_id }: z.infer<typeof TalkingVideoProps>) {
-  const { propStatus } = useTamboStreamStatus<{ request_id: string }>();
-  const ready = propStatus.request_id?.isSuccess;      // key is absent until first token
-  const job = useVeedJob(ready ? request_id : undefined);
+## Cost gate (when live generation is wired)
 
-  if (!ready) return <Skeleton />;
-  if (job.status === "FAILED") return <RenderFailed onRetry={...} />;
-  if (job.status !== "COMPLETED") return <RenderProgress seconds={job.seconds} />;
-  return <video src={job.url} controls playsInline />;
-}
-```
+Live fabric still belongs on a **server** route that holds `FAL_KEY`. No `NEXT_PUBLIC_FAL_KEY`. Gate spend server-side (409 + `estimated_cost_usd`) before `fal.queue.submit`. The UI still only receives a request id. Endpoint prices: [veed-fal-api](../../../videos/skills/veed-fal-api/SKILL.md).
 
-**fal CDN URLs expire; Tambo threads don't.** Tambo persists conversations, so a thread reopened next week re-renders this component against a stale link. Either the route copies the finished mp4 to our own storage and returns our URL, or the component handles a dead source with a re-render affordance. Don't persist a bare `v3.fal.media` URL as if it were durable.
+`probeAudioDuration` via `ffprobe` is not available on most serverless runtimes — probe client-side from `<audio>`, decode the header, or run the route on Node.
 
-## Before shipping a VEED tool — checklist
+fal CDN URLs expire. Copy finished media into `artifacts/educational-video/{run_id}/` and serve through `/api/run/[id]/file/...`.
 
-1. Tool returns a receipt, never awaits the render.
-2. `FAL_KEY` appears in exactly one file, server-side. Must return nothing:
+## Before shipping a VEED-touching view — checklist
+
+1. Codex action returns a receipt, never awaits the render.
+2. `FAL_KEY` appears in server-only files. Must return nothing:
    `rg -n 'NEXT_PUBLIC_FAL|VITE_FAL|EXPO_PUBLIC_FAL'`
-3. No `tamboStreamableHint` on anything that reaches fal. Review every hit:
-   `rg -n -B8 'tamboStreamableHint' src | rg -i 'fal|veed|video'`
-4. `propsSchema` carries a request/id, never a `video_url` or a generated payload.
-5. Server-side spend cap with a 409 confirmation path, and `estimated_cost_usd` shown in the thread.
-6. Every prop read with `?.` / `??`, render gated on `propStatus.<field>?.isSuccess`.
-7. Finished video persisted somewhere durable, or expiry handled in the component.
-8. Registered in `src/lib/tambo.ts` with a description that says **when** to use it, not just what it is.
+3. No streamable-tool hint on anything that reaches fal.
+4. `propsSchema` carries a request/id, never a `video_url`.
+5. Registered in `src/lib/registry.tsx` with a description that says **when** to use it.
+6. Look comes from `src/styles/riso.css` / `docs/riso-system.md`, not shadcn defaults.

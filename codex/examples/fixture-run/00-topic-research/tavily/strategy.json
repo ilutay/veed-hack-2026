@@ -1,0 +1,24 @@
+{
+  "query": "how to teach The dot-com bubble, misconceptions about The dot-com bubble",
+  "results": [
+    {
+      "title": "Teaching the dot-com bubble as contrast cases",
+      "url": "https://www.federalreservehistory.org/essays/dot-com-bubble",
+      "content": "A common misconception is that the Nasdaq rose about 400% between 1995 and 2000. The figure in the source is 600%. Learners also conflate the NASDAQ Composite with the NASDAQ-100; the peak and the trough figures come from different indices. Contrast cases work well here: survivors beside casualties, and the same companies valued two ways. Teaching this as a before/after pair lands the causal point - what changed was the pricing of belief, not the technology.",
+      "score": 0.88
+    },
+    {
+      "title": "Misconceptions about the crash",
+      "url": "https://en.wikipedia.org/wiki/Dot-com_bubble",
+      "content": "Another misconception is that the crash ended the internet economy, rather than repricing it. Several of the era's companies survived and grew. Avoid spending a slide on definitions; the contrast carries the takeaway in 15 seconds.",
+      "score": 0.77
+    }
+  ],
+  "images": [],
+  "answer": null,
+  "response_time": 0.31,
+  "usage": {
+    "credits": 2
+  },
+  "request_id": "fixture-strategy"
+}

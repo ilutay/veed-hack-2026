@@ -6,15 +6,19 @@
 # Run artifacts (generated media, provider responses)
 artifacts/
 
-# OS / editor noise
-.DS_Store
-*.swp
-.gstack/
-
-# Local Next.js application state
-node_modules/
-.next/
+# App
+/node_modules/
+/.next/
+/dist/
+/ops/teambox/dist/
 coverage/
 playwright-report/
 test-results/
 *.tsbuildinfo
+__pycache__/
+*.pyc
+
+# OS / editor noise
+.DS_Store
+*.swp
+.gstack/

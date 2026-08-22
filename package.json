@@ -1,5 +1,5 @@
 {
-  "name": "pioneer-gym",
+  "name": "veed-hack-2026",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:e2e": "vitest run src/lib/pioneer/gateway.e2e.test.ts src/lib/gym/engine.test.ts src/lib/gym/http.test.ts",
     "test:browser": "playwright test",
+    "test:timing": "node --experimental-strip-types tests/test_player_timing.mjs",
     "smoke:live:pioneer": "RUN_LIVE_PIONEER_SMOKE=1 vitest run --config vitest.live.config.ts"
   },
   "dependencies": {

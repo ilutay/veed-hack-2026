@@ -1,0 +1,43 @@
+{
+  "query": "The dot-com bubble",
+  "results": [
+    {
+      "title": "Dot-com bubble",
+      "url": "https://en.wikipedia.org/wiki/Dot-com_bubble",
+      "content": "The NASDAQ Composite index peaked at 5,048.62 on 10 March 2000. Between 1995 and its peak in March 2000, the NASDAQ Composite rose by 600%. At its trough on 9 October 2002 the NASDAQ-100 had fallen to 1,114, down 78% from its peak. By the end of the 2002 stock market downturn, stocks had lost $5 trillion in market capitalisation since the peak. By November 2000 most internet stocks had declined 75% from their highs, wiping out $1.755 trillion in value.",
+      "raw_content": "The **dot-com bubble** was a stock market bubble in the late 1990s. The NASDAQ Composite index peaked at 5,048.62 on 10 March 2000. Between 1995 and its peak in March 2000, the NASDAQ Composite rose by 600%. The crash that followed wiped out trillions in paper value, but the underlying internet technology survived.",
+      "score": 0.95
+    },
+    {
+      "title": "The Dot-Com Bubble",
+      "url": "https://www.federalreservehistory.org/essays/dot-com-bubble",
+      "content": "Investment poured into internet startups far ahead of profits. Many firms had no viable business. When the bubble burst in 2000, speculative pricing collapsed while the technology itself continued.",
+      "score": 0.81
+    },
+    {
+      "title": "Dotcom Bubble Definition",
+      "url": "https://www.investopedia.com/terms/d/dotcom-bubble.asp",
+      "content": "The late-1990s boom inflated on investment far ahead of profit. After March 2000, thousands of companies disappeared as market value was wiped out.",
+      "score": 0.74
+    },
+    {
+      "title": "Dot-com bubble",
+      "url": "https://www.britannica.com/money/dot-com-bubble",
+      "content": "The episode is a before-and-after case: the same companies priced two ways, and survivors sitting beside casualties.",
+      "score": 0.66
+    },
+    {
+      "title": "Internet stocks after 2000",
+      "url": "https://www.sec.gov/spotlight/internet-economy",
+      "content": "Several of the era's companies survived and grew. The crash repriced belief; it did not end the internet economy.",
+      "score": 0.61
+    }
+  ],
+  "images": [],
+  "answer": null,
+  "response_time": 0.42,
+  "usage": {
+    "credits": 2
+  },
+  "request_id": "fixture-ground-facts"
+}

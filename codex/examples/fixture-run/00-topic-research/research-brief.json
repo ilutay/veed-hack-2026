@@ -1,0 +1,88 @@
+{
+  "run_id": "fixture-dotcom",
+  "topic": "The dot-com bubble",
+  "audience": "general learners",
+  "concept": "The late-1990s internet boom inflated on investment far ahead of profit, and when it burst the speculation died but the technology did not.",
+  "facts": [
+    {
+      "id": "fact-01",
+      "claim": "The NASDAQ Composite index peaked at 5,048.62 on 10 March 2000.",
+      "source_id": "src-wikipedia-dotcom",
+      "confidence": "high"
+    },
+    {
+      "id": "fact-02",
+      "claim": "Between 1995 and its peak in March 2000, the NASDAQ Composite rose by 600%.",
+      "source_id": "src-wikipedia-dotcom",
+      "confidence": "high",
+      "note": "Commonly misquoted as roughly 400%. Use 600% or say 'roughly sixfold'."
+    },
+    {
+      "id": "fact-03",
+      "claim": "At its trough on 9 October 2002 the NASDAQ-100 had fallen to 1,114, down 78% from its peak.",
+      "source_id": "src-wikipedia-dotcom",
+      "confidence": "high",
+      "note": "The source attributes this trough figure to the NASDAQ-100, not the Composite. Do not swap the two indices in narration."
+    },
+    {
+      "id": "fact-04",
+      "claim": "By the end of the 2002 stock market downturn, stocks had lost $5 trillion in market capitalisation since the peak.",
+      "source_id": "src-wikipedia-dotcom",
+      "confidence": "high"
+    },
+    {
+      "id": "fact-05",
+      "claim": "By November 2000 most internet stocks had declined 75% from their highs, wiping out $1.755 trillion in value.",
+      "source_id": "src-wikipedia-dotcom",
+      "confidence": "high"
+    }
+  ],
+  "misconceptions": [
+    "That the Nasdaq rose 'about 400%' between 1995 and 2000 - the figure in the source is 600%.",
+    "Conflating the NASDAQ Composite with the NASDAQ-100; the peak and the trough figures come from different indices.",
+    "That the crash ended the internet economy, rather than repricing it - several of the era's companies survived and grew."
+  ],
+  "strategy": {
+    "id": "contrast-cases",
+    "rationale": "The topic is natively a before/after pair: identical companies valued two ways, and survivors sitting beside casualties. Contrast cases let 15 seconds carry the causal point - what changed was the pricing of belief, not the technology - without spending a slide on definitions.",
+    "runner_up": "concrete-to-abstract"
+  },
+  "next_topics": [
+    {
+      "direction": "deeper",
+      "topic": "What actually popped the bubble in March 2000",
+      "why": "The brief establishes that it burst but not the mechanism; the trigger is the natural next question and is well documented."
+    },
+    {
+      "direction": "wider",
+      "topic": "Speculative bubbles before the internet",
+      "why": "Places the episode in a pattern the learner can reuse, rather than as a one-off piece of tech history."
+    },
+    {
+      "direction": "applied",
+      "topic": "Which dot-com era companies survived, and what they did differently",
+      "why": "fact-05 and the survival of the technology point straight at this; it is the concrete payoff of the contrast the lesson sets up."
+    }
+  ],
+  "sources": [
+    {
+      "id": "src-wikipedia-dotcom",
+      "title": "Dot-com bubble",
+      "url": "https://en.wikipedia.org/wiki/Dot-com_bubble",
+      "publisher": "Wikipedia",
+      "accessed_at": "2026-08-22"
+    }
+  ],
+  "research": {
+    "provider": "fixture",
+    "mode": "dry-run",
+    "credits": 0,
+    "calls": 0,
+    "queries": []
+  },
+  "style_notes": [
+    "FIXTURE: hand-built for page development, not produced by a live Tavily pass. research.mode is dry-run and credits are 0.",
+    "Single source. A live pass must broaden this; every figure above is currently traceable to one encyclopaedia article.",
+    "This brief contradicts codex/examples/dotcom-bubble.lesson-script.example.json, which narrates 'almost 400%' and carries a style note admitting its figures were unverified. 600% is the sourced figure."
+  ]
+}

@@ -85,3 +85,30 @@ test("invalid dynamic props stop before Tambo and recover only through the certi
   await expect(page.getByText("SEPARATELY VALIDATED FALLBACK")).toBeVisible();
   expect(gymResponseCount).toBe(2);
 });
+
+test("Taste Labs is gated and can only open the tracked fixture", async ({ page }) => {
+  const externalRequests: string[] = [];
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    if (url.host !== "127.0.0.1:3100") externalRequests.push(request.url());
+  });
+
+  await page.goto("/taste-labs");
+  await expect(page.getByRole("heading", { name: "Enter the gym." })).toBeVisible();
+  await page.getByLabel("Shared access code").fill(ACCESS_CODE);
+  await page.getByRole("button", { name: "Enter Pioneer Gym" }).click();
+  await expect(page.getByRole("heading", { name: "What do you want to learn?" })).toBeVisible();
+
+  await page.getByLabel("Learning topic").fill("Teach me why bubbles burst");
+  await page.getByRole("button", { name: "Open fixture" }).click();
+  await expect(
+    page.getByRole("heading", { name: "The Dot-Com Bubble in 15 Seconds" }),
+  ).toBeVisible();
+  await expect(page.getByText("TRACKED FIXTURE / fixture-dotcom")).toBeVisible();
+
+  const mutation = await page.request.post(
+    "/api/taste-labs/run/fixture-dotcom",
+  );
+  expect(mutation.status()).toBe(405);
+  expect(externalRequests).toEqual([]);
+});

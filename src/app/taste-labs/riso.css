@@ -1,0 +1,453 @@
+/* Taste Labs riso demo. Every selector is rooted at .tasteLabsRoot so the
+ * teammate aesthetic cannot alter Pioneer Gym or the shared access screen. */
+
+.tasteLabsRoot {
+  --taste-paper: #f4efe4;
+  --taste-body: #1a1614;
+  --taste-red: #f24b4b;
+  --taste-blue: #008cc4;
+  --taste-yellow: #f2a900;
+  --taste-violet: #4c3a8c;
+  --taste-green: #009e73;
+  --taste-pink: #e04b8c;
+  --taste-radius: 4px;
+  --taste-display: ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif;
+  --taste-text: system-ui, -apple-system, "Segoe UI", sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: var(--taste-paper);
+  color: var(--taste-body);
+  font-family: var(--taste-text);
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.tasteLabsRoot *,
+.tasteLabsRoot *::before,
+.tasteLabsRoot *::after {
+  box-sizing: border-box;
+}
+
+.tasteLabsRoot .tasteWrap {
+  max-width: 1100px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: clamp(18px, 4vw, 44px);
+}
+
+.tasteLabsRoot .tasteSiteHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 18px;
+  border-bottom: 3px solid var(--taste-body);
+}
+
+.tasteLabsRoot .tasteSiteHeader > div {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.tasteLabsRoot .tasteSiteHeader strong,
+.tasteLabsRoot .tasteSiteHeader small {
+  display: block;
+}
+
+.tasteLabsRoot .tasteSiteHeader small {
+  opacity: 0.65;
+}
+
+.tasteLabsRoot .tasteMark {
+  display: grid;
+  width: 43px;
+  height: 43px;
+  place-items: center;
+  border: 3px solid var(--taste-body);
+  background: var(--taste-red);
+  color: var(--taste-paper);
+  font-family: var(--taste-display);
+  transform: rotate(-2deg);
+}
+
+.tasteLabsRoot .tasteStatus,
+.tasteLabsRoot .tasteEyebrow,
+.tasteLabsRoot .tasteReceipt {
+  font-family: var(--taste-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.tasteLabsRoot .tasteStatus {
+  padding: 6px 9px;
+  border: 2px solid var(--taste-body);
+  background: var(--taste-yellow);
+}
+
+.tasteLabsRoot .tasteBoundary {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 14px;
+  margin: 18px 0 34px;
+  padding: 11px 14px;
+  border-left: 7px solid var(--taste-green);
+  background: color-mix(in srgb, var(--taste-green) 10%, var(--taste-paper));
+  font-size: 0.86rem;
+}
+
+.tasteLabsRoot .tasteBoundary strong {
+  font-family: var(--taste-display);
+  text-transform: uppercase;
+}
+
+.tasteLabsRoot .tasteDisplay {
+  margin: 0 0 0.4em;
+  font-family: var(--taste-display);
+  font-weight: 700;
+  font-synthesis: none;
+  letter-spacing: -0.035em;
+  line-height: 0.96;
+  text-transform: uppercase;
+}
+
+.tasteLabsRoot h1.tasteDisplay {
+  max-width: 900px;
+  font-size: clamp(2.2rem, 7vw, 5rem);
+}
+
+.tasteLabsRoot h2.tasteDisplay {
+  font-size: clamp(1.3rem, 3.2vw, 2.2rem);
+}
+
+.tasteLabsRoot .tasteMisreg {
+  text-shadow: -2px -2px 0 var(--taste-blue);
+}
+
+.tasteLabsRoot .tasteObjective {
+  max-width: 68ch;
+  font-size: 1.05rem;
+  opacity: 0.82;
+}
+
+.tasteLabsRoot .tasteComposer {
+  margin: 6vh 0;
+}
+
+.tasteLabsRoot .tasteComposerRow {
+  display: flex;
+  max-width: 760px;
+  align-items: stretch;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.tasteLabsRoot .tasteComposer input {
+  min-width: 0;
+  flex: 1 1 240px;
+  padding: 12px 14px;
+  border: 3px solid var(--taste-body);
+  border-radius: var(--taste-radius);
+  background: var(--taste-paper);
+  color: var(--taste-body);
+  font: inherit;
+}
+
+.tasteLabsRoot .tasteComposer input:focus {
+  outline: 4px solid color-mix(in srgb, var(--taste-blue) 45%, transparent);
+  outline-offset: 0;
+}
+
+.tasteLabsRoot .tasteButton {
+  padding: 10px 15px;
+  cursor: pointer;
+  border: 3px solid var(--taste-body);
+  border-radius: var(--taste-radius);
+  background: var(--taste-paper);
+  color: var(--taste-body);
+  font-family: var(--taste-display);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  transition: transform 90ms ease-out, background 150ms ease-out;
+}
+
+.tasteLabsRoot .tasteButton:hover {
+  background: color-mix(in srgb, var(--taste-blue) 14%, var(--taste-paper));
+}
+
+.tasteLabsRoot .tasteButton:active {
+  transform: scale(0.97) translateY(1px);
+}
+
+.tasteLabsRoot .tasteButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.tasteLabsRoot .tasteButtonPrimary {
+  background: var(--taste-red);
+  color: #fff8e9;
+}
+
+.tasteLabsRoot .tasteLesson header {
+  margin: 24px 0;
+}
+
+.tasteLabsRoot .tasteStage {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  border: 3px solid var(--taste-body);
+  border-radius: var(--taste-radius);
+  background: var(--taste-paper);
+}
+
+.tasteLabsRoot .tasteStage img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tasteLabsRoot .tastePlaceholder {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
+  padding: 5px 9px;
+  border: 2px solid var(--taste-body);
+  background: var(--taste-yellow);
+  font-family: var(--taste-display);
+  font-size: 0.68rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  transform: rotate(2deg);
+}
+
+.tasteLabsRoot .tasteCaption {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 13px clamp(14px, 3vw, 28px) 17px;
+  border-top: 3px solid var(--taste-body);
+  background: var(--taste-red);
+  color: #fff8e9;
+}
+
+.tasteLabsRoot .tasteCaption p {
+  max-width: 66ch;
+  margin: 0;
+}
+
+.tasteLabsRoot .tasteSlideTitle {
+  font-family: var(--taste-display);
+  font-size: clamp(1rem, 2.4vw, 1.4rem);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.tasteLabsRoot .tasteControls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.tasteLabsRoot .tasteCounter {
+  font-family: var(--taste-display);
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.tasteLabsRoot .tasteTrack {
+  position: relative;
+  min-width: 90px;
+  height: 14px;
+  flex: 1;
+  overflow: hidden;
+  border: 3px solid var(--taste-body);
+}
+
+.tasteLabsRoot .tasteTrack > span {
+  position: absolute;
+  inset: 0 100% 0 0;
+  background: var(--taste-blue);
+  transition: right 120ms linear;
+}
+
+.tasteLabsRoot .tasteContinue {
+  margin: 14px 0 28px;
+  background: var(--taste-yellow);
+}
+
+.tasteLabsRoot .tasteMissing {
+  display: grid;
+  min-height: 320px;
+  place-content: center;
+  gap: 9px;
+  padding: 24px;
+  border: 3px solid var(--taste-body);
+  background: repeating-linear-gradient(
+    45deg,
+    transparent 0 12px,
+    color-mix(in srgb, var(--taste-red) 18%, transparent) 12px 24px
+  );
+  text-align: center;
+}
+
+.tasteLabsRoot .tasteSources {
+  margin-top: 34px;
+  padding-top: 18px;
+  border-top: 3px solid var(--taste-body);
+}
+
+.tasteLabsRoot .tasteSources a,
+.tasteLabsRoot .tasteFooter a {
+  color: var(--taste-violet);
+  font-weight: 700;
+}
+
+.tasteLabsRoot .tasteDim {
+  max-width: 68ch;
+  font-size: 0.82rem;
+  opacity: 0.67;
+}
+
+.tasteLabsRoot .tasteChoices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin: 26px 0;
+}
+
+.tasteLabsRoot .tasteChoice {
+  display: grid;
+  min-height: 190px;
+  gap: 8px;
+  padding: 17px;
+  cursor: pointer;
+  border: 3px solid var(--taste-body);
+  border-radius: var(--taste-radius);
+  background: radial-gradient(
+    color-mix(in srgb, var(--choice-ink, var(--taste-blue)) 45%, transparent) 1.5px,
+    transparent 1.5px
+  );
+  background-color: var(--taste-paper);
+  background-size: 6px 6px;
+  color: var(--taste-body);
+  text-align: left;
+}
+
+.tasteLabsRoot .tasteChoice[data-direction="deeper"] {
+  --choice-ink: var(--taste-blue);
+}
+
+.tasteLabsRoot .tasteChoice[data-direction="wider"] {
+  --choice-ink: var(--taste-pink);
+}
+
+.tasteLabsRoot .tasteChoice[data-direction="applied"] {
+  --choice-ink: var(--taste-green);
+}
+
+.tasteLabsRoot .tasteChoice > span {
+  font-family: var(--taste-display);
+  font-size: 2.4rem;
+  font-weight: 700;
+}
+
+.tasteLabsRoot .tasteChoice > small {
+  font-family: var(--taste-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tasteLabsRoot .tasteChoice > strong {
+  align-self: end;
+  padding: 7px;
+  background: color-mix(in srgb, var(--taste-paper) 86%, transparent);
+}
+
+.tasteLabsRoot .tasteChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: 24px 0;
+}
+
+.tasteLabsRoot .tasteBlock {
+  animation: tasteSnapIn 160ms cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+}
+
+.tasteLabsRoot .tasteFooter {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 54px;
+  padding-top: 18px;
+  border-top: 3px solid var(--taste-body);
+  font-size: 0.8rem;
+}
+
+.tasteLabsRoot .tasteGrain {
+  position: fixed;
+  inset: -50%;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@keyframes tasteSnapIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) rotate(-0.5deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .tasteLabsRoot .tasteSiteHeader,
+  .tasteLabsRoot .tasteFooter,
+  .tasteLabsRoot .tasteBoundary {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tasteLabsRoot .tasteComposerRow,
+  .tasteLabsRoot .tasteControls {
+    flex-wrap: wrap;
+  }
+
+  .tasteLabsRoot .tasteComposer input {
+    flex-basis: 100%;
+  }
+
+  .tasteLabsRoot .tasteCaption > p:last-child {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tasteLabsRoot .tasteBlock,
+  .tasteLabsRoot .tasteSnap {
+    animation: none;
+  }
+
+  .tasteLabsRoot .tasteButton,
+  .tasteLabsRoot .tasteTrack > span {
+    transition: none;
+  }
+}
