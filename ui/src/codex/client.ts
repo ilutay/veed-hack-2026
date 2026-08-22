@@ -12,6 +12,15 @@ export async function requestNextBlock(input: {
   episodeId: string;
   turnId: string;
   state: string;
+  curriculum?: {
+    topic: string;
+    currentSurface: { componentName: string; props: Record<string, unknown> } | null;
+    learnerEvent: {
+      component: string;
+      action: string;
+      payload: Record<string, unknown>;
+    } | null;
+  };
   /** Learner profile slug; the bridge adds onboarding status and taste to the prompt. */
   slug?: string;
   signal?: AbortSignal;
@@ -23,6 +32,7 @@ export async function requestNextBlock(input: {
       episodeId: input.episodeId,
       turnId: input.turnId,
       state: input.state,
+      ...(input.curriculum ? { curriculum: input.curriculum } : {}),
       ...(input.slug ? { slug: input.slug } : {}),
     }),
     signal: input.signal,

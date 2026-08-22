@@ -26,7 +26,8 @@ const ADAPTIVE_GYM_ACTIONS = new Set([
 
 function commandSummary(command: CodexComponentCommand): string {
   if (command.pioneerReceipt) {
-    return `Pioneer adapted the next ${command.pioneerReceipt.phase} step: ${command.pioneerReceipt.focus}`;
+    const source = command.pioneerReceipt.mode === "live" ? "Pioneer adapted" : "Curriculum preview selected";
+    return `${source} the next ${command.pioneerReceipt.phase} step: ${command.pioneerReceipt.focus}`;
   }
   if (command.componentName === "AgentNote" && typeof command.props.text === "string") {
     return command.props.text;
@@ -217,6 +218,15 @@ function Studio() {
           episodeId: EPISODE_ID,
           turnId,
           state: practiceState(normalizedTopic, context, event, visibleCommand),
+          curriculum: {
+            topic: normalizedTopic,
+            currentSurface: visibleCommand
+              ? { componentName: visibleCommand.componentName, props: visibleCommand.props }
+              : null,
+            learnerEvent: event
+              ? { component: event.component, action: event.action, payload: event.payload }
+              : null,
+          },
           ...(slug ? { slug } : {}),
         });
         // A newer side-chat command owns the page. Do not let an older tutor
@@ -447,7 +457,11 @@ function Studio() {
           >
             {activeBlock.pioneerReceipt ? (
               <p className="receipt" data-testid="pioneer-curriculum-receipt">
-                Pioneer adapted this {activeBlock.pioneerReceipt.phase} step · {activeBlock.pioneerReceipt.focus}
+                {activeBlock.pioneerReceipt.mode === "live" ? "Pioneer live" : "Curriculum preview"} ·{" "}
+                {activeBlock.pioneerReceipt.phase} · {activeBlock.pioneerReceipt.focus}
+                {activeBlock.pioneerReceipt.usage
+                  ? ` · ${activeBlock.pioneerReceipt.usage.totalTokens} tokens`
+                  : ""}
               </p>
             ) : null}
             {renderBlock(activeBlock)}

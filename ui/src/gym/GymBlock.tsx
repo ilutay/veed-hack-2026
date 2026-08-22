@@ -13,10 +13,17 @@ export interface CodexComponentCommand {
   turnId: string;
   pioneerReceipt?: {
     requestId: string;
-    mode: "live";
+    clientRequestId?: string;
+    completionId?: string;
+    model?: string;
+    mode: "live" | "dry-run";
+    selectedMoveId: string;
     phase: "diagnose" | "feedback" | "retry" | "transfer";
     focus: string;
     reason: string;
+    evidenceIds: string[];
+    confidence?: "low" | "medium" | "high";
+    usage?: { inputTokens: number; outputTokens: number; totalTokens: number };
   };
 }
 
