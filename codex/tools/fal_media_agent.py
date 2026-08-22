@@ -26,7 +26,26 @@ from typing import Any
 
 
 IMAGE_ENDPOINT = "fal-ai/z-image/turbo"
-VOICE_ENDPOINT = "xai/tts/v1"
+VOICE_ENDPOINT = "fal-ai/minimax/speech-2.6-turbo"
+VOICE_TEXT_LIMIT = 5000
+LANGUAGE_BOOSTS = {
+    "en": "English",
+    "es": "Spanish",
+    "fr": "French",
+    "de": "German",
+    "it": "Italian",
+    "pt": "Portuguese",
+    "nl": "Dutch",
+    "ru": "Russian",
+    "uk": "Ukrainian",
+    "pl": "Polish",
+    "tr": "Turkish",
+    "ar": "Arabic",
+    "hi": "Hindi",
+    "ja": "Japanese",
+    "ko": "Korean",
+    "zh": "Chinese",
+}
 DEFAULT_ART_DIRECTION = (
     "Clean educational editorial illustration; concrete diagrams and visual "
     "metaphors over decorative backgrounds; consistent palette; no tiny labels "
@@ -156,7 +175,8 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
         choices=("dry-run", "test", "live"),
         default=os.environ.get("WORKFLOW_MODE", "dry-run"),
     )
-    parser.add_argument("--voice", default=os.environ.get("FAL_TTS_VOICE", "ara"))
+    parser.add_argument("--voice", default=os.environ.get("FAL_TTS_VOICE", "Friendly_Person"))
+    parser.add_argument("--emotion", default=os.environ.get("FAL_TTS_EMOTION", "happy"))
     parser.add_argument("--language", default=os.environ.get("FAL_TTS_LANGUAGE", "en"))
     parser.add_argument("--image-size", default=os.environ.get("FAL_IMAGE_SIZE", "landscape_16_9"))
     parser.add_argument(
@@ -186,7 +206,7 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
         help=(
             "Target duration for the talking-head intro audio clip. Advisory "
             "only, like the per-slide target_duration_seconds hints below — "
-            "xai/tts/v1 does not enforce a duration."
+            "the TTS model does not enforce a duration."
         ),
     )
     return parser.parse_args(argv)
@@ -216,6 +236,7 @@ def run_agent(
         lesson,
         run_id=run_id,
         voice=args.voice,
+        emotion=args.emotion,
         language=args.language,
     )
     intro_payload = (
@@ -223,6 +244,7 @@ def run_agent(
             lesson,
             run_id=run_id,
             voice=args.voice,
+            emotion=args.emotion,
             language=args.language,
             target_seconds=args.intro_seconds,
         )
@@ -558,6 +580,7 @@ def build_voice_payload(
     *,
     run_id: str,
     voice: str,
+    emotion: str,
     language: str,
 ) -> dict[str, Any]:
     segments = [
@@ -569,14 +592,16 @@ def build_voice_payload(
         for slide in lesson["slides"]
     ]
     text = "\n[pause]\n".join(segment["text"].strip() for segment in segments)
-    if len(text) > 15000:
+    if len(text) > VOICE_TEXT_LIMIT:
         raise AgentError(
-            "combined narration exceeds xai/tts/v1 15,000 character limit; split generation is needed"
+            f"combined narration exceeds {VOICE_ENDPOINT} {VOICE_TEXT_LIMIT:,} character limit; "
+            "split generation is needed"
         )
     return {
         "run_id": run_id,
         "endpoint": VOICE_ENDPOINT,
         "voice": voice,
+        "emotion": emotion,
         "language": language,
         "segments": segments,
         "target_duration_seconds": sum(
@@ -584,9 +609,13 @@ def build_voice_payload(
             for segment in segments
         ),
         "payload": {
-            "text": text,
-            "voice": voice,
-            "language": language,
+            "prompt": text,
+            "voice_setting": {
+                "voice_id": voice,
+                "emotion": emotion,
+            },
+            "language_boost": language_boost(language),
+            "output_format": "url",
         },
     }
 
@@ -596,6 +625,7 @@ def build_intro_audio_payload(
     *,
     run_id: str,
     voice: str,
+    emotion: str,
     language: str,
     target_seconds: int,
 ) -> dict[str, Any]:
@@ -607,14 +637,24 @@ def build_intro_audio_payload(
         "run_id": run_id,
         "endpoint": VOICE_ENDPOINT,
         "voice": voice,
+        "emotion": emotion,
         "language": language,
         "target_duration_seconds": target_seconds,
         "payload": {
-            "text": text,
-            "voice": voice,
-            "language": language,
+            "prompt": text,
+            "voice_setting": {
+                "voice_id": voice,
+                "emotion": emotion,
+            },
+            "language_boost": language_boost(language),
+            "output_format": "url",
         },
     }
+
+
+def language_boost(language: str) -> str:
+    """Map an ISO language code to a MiniMax `language_boost` value."""
+    return LANGUAGE_BOOSTS.get(language.strip().lower(), "auto")
 
 
 def stable_seed(run_id: str, slide_id: str) -> int:

@@ -32,9 +32,9 @@ provider request. Do not read `.env.local`.
 ## Models
 
 - Slide images: `fal-ai/z-image/turbo`
-- Voiceover: `xai/tts/v1`
-- Talking-head intro audio: `xai/tts/v1` (same endpoint as voiceover, one
-  short request instead of the combined slide narration)
+- Voiceover: `fal-ai/minimax/speech-2.6-turbo`
+- Talking-head intro audio: `fal-ai/minimax/speech-2.6-turbo` (same endpoint as
+  voiceover, one short request instead of the combined slide narration)
 
 ## Inputs
 
@@ -58,14 +58,24 @@ Submit one queue job per slide in parallel. Defaults:
 
 Submit one queue job for the combined slide narration. The local payload keeps
 ordered `segments` for timing and replay, while the provider payload sends the
-combined `text`, `voice`, and `language`.
+combined `prompt` plus the MiniMax voice settings. Defaults:
+
+- `voice_setting.voice_id`: `Friendly_Person`
+- `voice_setting.emotion`: `happy`
+- `language_boost`: mapped from the `--language` code (`en` -> `English`,
+  unknown codes -> `auto`)
+- `output_format`: `url`
+
+Narration is capped at 5,000 characters per request; longer lessons need split
+generation.
 
 The current TTS provider does not return per-slide timings. Emit estimated
 timings from slide durations and mark `narration-timings.json` as estimated.
 
 ## Talking-Head Intro Audio Request
 
-Submit a second, independent queue job to the same `xai/tts/v1` endpoint when
+Submit a second, independent queue job to the same
+`fal-ai/minimax/speech-2.6-turbo` endpoint when
 `lesson_script.intro` is present, built from
 `intro.talking_head_script` alone (not joined with the slide narration).
 `target_duration_seconds` defaults to 5 (`--intro-seconds` /

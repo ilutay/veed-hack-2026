@@ -42,7 +42,8 @@ def args_for(script: Path, output_dir: Path, mode: str = "dry-run") -> argparse.
         output_dir=output_dir,
         run_id="unit-run",
         mode=mode,
-        voice="ara",
+        voice="Friendly_Person",
+        emotion="happy",
         language="en",
         image_size="landscape_16_9",
         image_steps=8,
@@ -63,7 +64,7 @@ class FakeFalClient:
         if endpoint_id == fal_media_agent.IMAGE_ENDPOINT:
             slide_match = re.search(r"Slide id: (slide-\d+)", payload["prompt"])
             request_id = f"req-{slide_match.group(1)}"
-        elif "[pause]" in payload.get("text", ""):
+        elif "[pause]" in payload.get("prompt", ""):
             # Only the combined multi-slide narration joins segments with
             # "[pause]"; the intro clip is a single short line of text.
             request_id = "req-voiceover"
@@ -132,9 +133,19 @@ class FalMediaAgentTests(unittest.TestCase):
             self.assertEqual(prompts[0]["endpoint"], fal_media_agent.IMAGE_ENDPOINT)
             self.assertEqual(prompts[0]["payload"]["image_size"], "landscape_16_9")
             self.assertEqual(voice_payload["endpoint"], fal_media_agent.VOICE_ENDPOINT)
-            self.assertIn("[pause]", voice_payload["payload"]["text"])
+            self.assertIn("[pause]", voice_payload["payload"]["prompt"])
+            self.assertEqual(
+                voice_payload["payload"]["voice_setting"],
+                {"voice_id": "Friendly_Person", "emotion": "happy"},
+            )
+            self.assertEqual(voice_payload["payload"]["language_boost"], "English")
+            self.assertEqual(voice_payload["payload"]["output_format"], "url")
             self.assertEqual(intro_payload["endpoint"], fal_media_agent.VOICE_ENDPOINT)
-            self.assertEqual(intro_payload["payload"]["text"], "Let's make attention concrete.")
+            self.assertEqual(intro_payload["payload"]["prompt"], "Let's make attention concrete.")
+            self.assertEqual(
+                intro_payload["payload"]["voice_setting"],
+                {"voice_id": "Friendly_Person", "emotion": "happy"},
+            )
             self.assertEqual(intro_payload["target_duration_seconds"], 5)
             self.assertEqual(len(timings["segments"]), 5)
             self.assertTrue(timings["estimated"])
