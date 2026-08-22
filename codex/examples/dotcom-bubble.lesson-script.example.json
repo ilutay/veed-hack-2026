@@ -1,0 +1,69 @@
+{
+  "topic": "The dot-com bubble",
+  "title": "The Dot-Com Bubble in 15 Seconds",
+  "learning_objective": "Understand how the late-1990s internet investment boom inflated and burst, and what survived it.",
+  "audience": "general learners",
+  "duration_seconds": 15,
+  "style_notes": [
+    "Archival late-1990s tech aesthetic shifting to modern in the final slide.",
+    "Cool blues and greens for the boom, desaturated reds for the crash.",
+    "No dense text or tiny labels in generated images; the education lives in the voiceover.",
+    "ASSUMPTION: no sources supplied with the script; the Nasdaq and market-value figures are unverified."
+  ],
+  "slides": [
+    {
+      "id": "slide-01",
+      "title": "One of the biggest tech booms",
+      "key_points": ["late 1990s", "tech boom"],
+      "narration": "The dot-com bubble was one of the biggest tech booms in history.",
+      "visual_brief": "Late-1990s stock market screen with tech stocks surging.",
+      "duration_seconds": 2
+    },
+    {
+      "id": "slide-02",
+      "title": "Money before profits",
+      "key_points": ["speculative investment", "no viable business"],
+      "narration": "Investors poured money into internet startups, often before they had profits, or even a viable business.",
+      "visual_brief": "Collage of early internet companies, websites, and startup offices.",
+      "duration_seconds": 3
+    },
+    {
+      "id": "slide-03",
+      "title": "The Nasdaq climbs",
+      "key_points": ["1995 to 2000", "almost 400%"],
+      "narration": "From 1995 to 2000, the Nasdaq rose almost 400%.",
+      "visual_brief": "Rising stock market graph alongside excited investors.",
+      "duration_seconds": 3
+    },
+    {
+      "id": "slide-04",
+      "title": "Reality catches up",
+      "key_points": ["2000", "bubble bursts"],
+      "narration": "Then reality caught up. In 2000, the bubble burst, and tech stocks collapsed.",
+      "visual_brief": "Market chart suddenly turning sharply downward.",
+      "duration_seconds": 3
+    },
+    {
+      "id": "slide-05",
+      "title": "Trillions wiped out",
+      "key_points": ["companies disappeared", "market value lost"],
+      "narration": "Thousands of companies disappeared, and trillions of dollars in market value were wiped out.",
+      "visual_brief": "Empty startup office with discarded computers.",
+      "duration_seconds": 2
+    },
+    {
+      "id": "slide-06",
+      "title": "What survived",
+      "key_points": ["the internet endured", "Amazon"],
+      "narration": "But the internet survived, and companies like Amazon emerged stronger.",
+      "visual_brief": "Modern tech company office transitioning from a 1990s computer.",
+      "duration_seconds": 2
+    }
+  ],
+  "next_video": [
+    { "label": "A", "direction": "Why did it happen?" },
+    { "label": "B", "direction": "How did it crash?" },
+    { "label": "C", "direction": "Who actually won?" }
+  ],
+  "sources": []
+}
