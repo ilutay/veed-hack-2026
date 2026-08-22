@@ -17,16 +17,32 @@ inputs:
     default: artifacts/educational-video
 
 contracts:
+  research_brief: ../contracts/research-brief.schema.json
+  taste_profile: ../contracts/taste-profile.schema.json
   lesson_script: ../contracts/lesson-script.schema.json
   asset_manifest: ../contracts/asset-manifest.schema.json
   webpage_build: ../contracts/webpage-build.schema.json
 
 stages:
+  - id: topic_research
+    agent: ../subagents/topic-research-agent.md
+    skill: ../skills/topic-research
+    mode: sequential
+    input:
+      - topic
+      - learner_profile
+      - taste-profile.json
+    output:
+      - research-brief.json
+
   - id: research_script
     agent: ../subagents/research-script-agent.md
     skill: ../skills/topic-research-script
     mode: sequential
+    depends_on:
+      - topic_research
     input:
+      - research-brief.json
       - topic
       - learner_profile
     output:
@@ -93,6 +109,7 @@ api_boundaries:
 artifact_layout:
   root: artifacts/educational-video/{run_id}
   stage_dirs:
+    topic_research: 00-topic-research
     research_script: 01-research-script
     content_generation: 02-content-generation
     assemble_webpage: 03-webpage

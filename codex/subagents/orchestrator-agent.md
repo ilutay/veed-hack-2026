@@ -6,7 +6,7 @@ Own the end-to-end educational video run.
 
 - Accept the user topic and optional learner profile.
 - Create a run directory and pass stable paths to each stage.
-- Invoke research first, then run talking-head, slide-image, and voiceover generation in parallel.
+- Invoke `topic_research` first, then `research_script` from that brief, then run talking-head, slide-image, and voiceover generation in parallel.
 - Hand the completed asset manifest to the page assembly agent.
 - Stop on contract failures and return the failing artifact path plus the validation error.
 
@@ -19,6 +19,7 @@ Own the end-to-end educational video run.
 
 ## Outputs
 
+- `research-brief.json`
 - `lesson-script.json`
 - `asset-manifest.json`
 - `webpage-build.json`
