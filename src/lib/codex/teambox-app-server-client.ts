@@ -8,6 +8,9 @@ import type { CodexAction } from "./types";
 
 export const TEAMBOX_CODEX_PROXY_BINARY = "/usr/local/bin/codex" as const;
 export const TEAMBOX_CODEX_PROTOCOL_VERSION = "0.149.0" as const;
+export const TEAMBOX_CODEX_MODEL = "gpt-5.6-luna" as const;
+export const TEAMBOX_CODEX_REASONING_EFFORT = "low" as const;
+export const TEAMBOX_CODEX_SERVICE_TIER = "fast" as const;
 export const TEAMBOX_CODEX_APP_SERVER_SOCKET =
   "/run/teambox-codex/app-server.sock" as const;
 export const TEAMBOX_FIXED_REPO_ROOT =
@@ -156,6 +159,44 @@ function writeMessage(
     throw new Error("Codex app-server request line is too large");
   }
   child.stdin.write(line);
+}
+
+export function fixedTeamboxThreadStartParams(fixedRepoRoot: string) {
+  return {
+    cwd: fixedRepoRoot,
+    approvalPolicy: "never",
+    sandbox: "read-only",
+    ephemeral: true,
+    model: TEAMBOX_CODEX_MODEL,
+    serviceTier: TEAMBOX_CODEX_SERVICE_TIER,
+    serviceName: "pioneer-gym",
+    config: {
+      web_search: "disabled",
+      allow_login_shell: false,
+      apps: { _default: { enabled: false } },
+      skills: { include_instructions: false },
+      mcp_servers: {},
+    },
+  } as const;
+}
+
+export function fixedTeamboxTurnStartParams(
+  fixedRepoRoot: string,
+  threadId: string,
+  prompt: string,
+  outputSchema: Readonly<Record<string, unknown>>,
+) {
+  return {
+    threadId,
+    input: [{ type: "text", text: prompt, text_elements: [] }],
+    cwd: fixedRepoRoot,
+    approvalPolicy: "never",
+    sandboxPolicy: { type: "readOnly", networkAccess: false },
+    model: TEAMBOX_CODEX_MODEL,
+    effort: TEAMBOX_CODEX_REASONING_EFFORT,
+    serviceTier: TEAMBOX_CODEX_SERVICE_TIER,
+    outputSchema,
+  } as const;
 }
 
 function handleNotification(
@@ -320,20 +361,7 @@ async function runThroughFixedProxy(
     writeMessage(child, {
       method: "thread/start",
       id: 2,
-      params: {
-        cwd: fixedRepoRoot,
-        approvalPolicy: "never",
-        sandbox: "read-only",
-        ephemeral: true,
-        serviceName: "pioneer-gym",
-        config: {
-          web_search: "disabled",
-          allow_login_shell: false,
-          apps: { _default: { enabled: false } },
-          skills: { include_instructions: false },
-          mcp_servers: {},
-        },
-      },
+      params: fixedTeamboxThreadStartParams(fixedRepoRoot),
     });
     const threadStart = await waitForResponse(inbox, 2, collector, signal);
     const thread = isRecord(threadStart.thread) ? threadStart.thread : null;
@@ -345,6 +373,8 @@ async function runThroughFixedProxy(
       thread.ephemeral !== true ||
       threadStart.cwd !== fixedRepoRoot ||
       threadStart.approvalPolicy !== "never" ||
+      threadStart.model !== TEAMBOX_CODEX_MODEL ||
+      threadStart.serviceTier !== TEAMBOX_CODEX_SERVICE_TIER ||
       !sandbox ||
       sandbox.type !== "readOnly" ||
       sandbox.networkAccess !== false
@@ -355,14 +385,12 @@ async function runThroughFixedProxy(
     writeMessage(child, {
       method: "turn/start",
       id: 3,
-      params: {
-        threadId: thread.id,
-        input: [{ type: "text", text: prompt, text_elements: [] }],
-        cwd: fixedRepoRoot,
-        approvalPolicy: "never",
-        sandboxPolicy: { type: "readOnly", networkAccess: false },
+      params: fixedTeamboxTurnStartParams(
+        fixedRepoRoot,
+        thread.id,
+        prompt,
         outputSchema,
-      },
+      ),
     });
     const turnStart = await waitForResponse(inbox, 3, collector, signal);
     if (
