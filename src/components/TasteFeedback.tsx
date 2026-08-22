@@ -22,7 +22,7 @@ export function TasteFeedback({ run_id }: TasteFeedbackProps) {
 
   return (
     <section className="snap">
-      <h2 className="display misreg">How was that?</h2>
+      <h2>How was that?</h2>
       <p className="objective">
         Tap a reaction. Codex writes it onto the taste profile for the next
         topic.

@@ -1,5 +1,4 @@
 import { useCodexAction } from "@/components/CodexActionProvider";
-import { WidthFollowTitle } from "@/components/WidthFollowTitle";
 import type { PromptComposerProps } from "@/lib/schemas";
 import { useState } from "react";
 
@@ -18,10 +17,10 @@ export function PromptComposer({ seed_topic }: PromptComposerProps) {
         void dispatch({ type: "topic_submitted", payload: { topic: value } });
       }}
     >
-      <WidthFollowTitle>What do you want to learn?</WidthFollowTitle>
+      <h1 className="display">What do you want to learn?</h1>
       <p className="objective">
         {demo
-          ? "Demo mode runs the fixture lesson. Pointer movement smoothly animates the variable font heading."
+          ? "Demo mode runs the fixture lesson. No providers are called."
           : "Type any topic. The engine performs research, crafts an educational script, and synthesizes visual slides."}
       </p>
       <div className="composer-row">

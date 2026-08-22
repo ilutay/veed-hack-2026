@@ -36,6 +36,7 @@ export function AssetLibrary() {
 
   return (
     <section className="library">
+      <p className="eyebrow">Library</p>
       <h2 className="library-heading">Lessons</h2>
       <p className="dim">
         Every generated lesson stays here. Open one any time

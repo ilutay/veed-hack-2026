@@ -66,7 +66,7 @@ export function RecommendedTopics({ slug }: RecommendedTopicsProps) {
   if (error && !topics?.length) {
     return (
       <section>
-        <h2 className="display misreg">Start here</h2>
+        <h2>Start here</h2>
         <p className="dim">{error}</p>
       </section>
     );
@@ -75,7 +75,7 @@ export function RecommendedTopics({ slug }: RecommendedTopicsProps) {
   if (!topics?.length) {
     return (
       <section>
-        <h2 className="display misreg">Start here</h2>
+        <h2>Start here</h2>
         <p className="receipt">Scoring your quiz…</p>
       </section>
     );
@@ -83,7 +83,7 @@ export function RecommendedTopics({ slug }: RecommendedTopicsProps) {
 
   return (
     <section className="next-sec snap">
-      <h2 className="display misreg">Start here</h2>
+      <h2>Start here</h2>
       <p className="objective">
         Three topics pitched at your level. Pick one, or type your own below.
       </p>

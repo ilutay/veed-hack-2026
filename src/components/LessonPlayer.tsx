@@ -318,13 +318,13 @@ export function LessonPlayer({ run_id, runBase }: LessonPlayerProps) {
   return (
     <div className="wrap">
       <header>
-        <h1 className="display misreg">{script.title}</h1>
+        <h1 className="display">{script.title}</h1>
         <p className="objective">{script.learning_objective}</p>
       </header>
 
       {introUsable && intro ? (
         <section className="intro-sec">
-          <h2 className="display misreg">Intro</h2>
+          <h2>Intro</h2>
           <div className="stage">
             {isPlaceholder(intro) ? (
               <span className="placeholder-tag">placeholder</span>
@@ -339,7 +339,7 @@ export function LessonPlayer({ run_id, runBase }: LessonPlayerProps) {
         </section>
       ) : script.intro ? (
         <section className="intro-sec">
-          <h2 className="display misreg">Intro</h2>
+          <h2>Intro</h2>
           <div className="stage">
             <div className="missing">
               <strong className="display">Intro not rendered</strong>
@@ -483,7 +483,7 @@ export function LessonPlayer({ run_id, runBase }: LessonPlayerProps) {
 
       {script.sources?.length ? (
         <section className="sources">
-          <h2 className="display">Sources</h2>
+          <h2>Sources</h2>
           <ol>
             {script.sources.map((s) => (
               <li key={s.url}>
@@ -500,7 +500,7 @@ export function LessonPlayer({ run_id, runBase }: LessonPlayerProps) {
         </section>
       ) : (
         <section className="sources">
-          <h2 className="display">Sources</h2>
+          <h2>Sources</h2>
           <p className="dim">No sources supplied with this script.</p>
         </section>
       )}

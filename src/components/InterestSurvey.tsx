@@ -1,5 +1,4 @@
 import { useCodexAction } from "@/components/CodexActionProvider";
-import { WidthFollowTitle } from "@/components/WidthFollowTitle";
 import { postInterests, SUGGESTED_INTERESTS } from "@/lib/profiles";
 import type { InterestSurveyProps } from "@/lib/schemas";
 import { useState } from "react";
@@ -66,7 +65,7 @@ export function InterestSurvey({ slug }: InterestSurveyProps) {
         })();
       }}
     >
-      <WidthFollowTitle>What are you into?</WidthFollowTitle>
+      <h1 className="display">What are you into?</h1>
       <p className="objective">
         Pick a few topics, or add your own. At least one. At most five.
       </p>
@@ -103,7 +102,7 @@ export function InterestSurvey({ slug }: InterestSurveyProps) {
             </button>
           ))}
       </div>
-      <div className="composer-row" style={{ marginTop: "12px" }}>
+      <div className="composer-row">
         <input
           type="text"
           name="custom-interest"

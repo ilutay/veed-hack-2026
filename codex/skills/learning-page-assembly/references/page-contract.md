@@ -6,9 +6,10 @@ and `TasteFeedback`. Codex (`POST /api/codex/action`) starts pipeline runs and
 returns component blocks. Assembly may still copy assets into the run directory
 so the player can resolve them; it is not the learner-facing page.
 
-`page/` (`template.html`, `player.js`, `riso.css`) is the design source and a
-static harness. Do not delete it until `LessonPlayer` is proven against a real
-run. Visual tokens live in `docs/riso-system.md` and `src/styles/riso.css`.
+`page/` (`template.html`, `player.js`, `riso.css`) is a static fixture harness,
+not the design source. Visual tokens live in `docs/design-system.md` and
+`src/styles/riso.css`. The harness shares class names with `src/` and will look
+different from the app — that is expected.
 
 ## Required Experience
 

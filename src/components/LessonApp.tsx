@@ -54,7 +54,7 @@ function AppShell({ mode }: { mode: AppMode }) {
             <span className="app-brand-dot" />
             <span>Taste Labs // Ed-01</span>
           </div>
-          <div className="receipt" style={{ margin: 0 }}>
+          <div className="receipt">
             {mode === "demo" ? (
               <Link to="/">← Workflow Mode</Link>
             ) : (

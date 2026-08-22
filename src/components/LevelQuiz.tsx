@@ -71,7 +71,7 @@ export function LevelQuiz({ slug }: LevelQuizProps) {
   if (!resolvedSlug) {
     return (
       <section>
-        <h1 className="display misreg">Level check</h1>
+        <h1 className="display">Level check</h1>
         <p className="dim">No profile slug.</p>
       </section>
     );
@@ -80,7 +80,7 @@ export function LevelQuiz({ slug }: LevelQuizProps) {
   if (error && !questions) {
     return (
       <section>
-        <h1 className="display misreg">Level check</h1>
+        <h1 className="display">Level check</h1>
         <p className="dim">{error}</p>
       </section>
     );
@@ -89,9 +89,9 @@ export function LevelQuiz({ slug }: LevelQuizProps) {
   if (waiting || !questions) {
     return (
       <section className="snap">
-        <h1 className="display misreg">Level check</h1>
+        <h1 className="display">Level check</h1>
         <p className="receipt">Researching your interests…</p>
-        <div className="stage" style={{ aspectRatio: "16 / 5" }}>
+        <div className="stage stage-short">
           <div className="missing">
             <strong className="display">Researching</strong>
             <span>
@@ -124,7 +124,7 @@ export function LevelQuiz({ slug }: LevelQuizProps) {
         })();
       }}
     >
-      <h1 className="display misreg">Level check</h1>
+      <h1 className="display">Level check</h1>
       <p className="objective">
         A short quiz so we can pitch topics at the right height. Submit when
         every question has an answer.
@@ -141,7 +141,8 @@ export function LevelQuiz({ slug }: LevelQuizProps) {
                 <button
                   key={c.id}
                   type="button"
-                  className={`btn${on ? " btn-primary" : ""}`}
+                  className="btn"
+                  aria-pressed={on}
                   disabled={pending}
                   onClick={() =>
                     setAnswers((cur) => ({ ...cur, [q.id]: c.id }))

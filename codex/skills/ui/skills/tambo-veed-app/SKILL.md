@@ -22,12 +22,12 @@ App lives at the worktree root, not under `codex/skills/ui/`.
 | Path                                                                         | Role                                                                        |
 | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | `src/main.tsx`                                                               | Vite entry. `/` = workflow, `/demo` = fixture.                              |
-| `index.html`                                                                 | Tilt Neon via Google Fonts. `src/styles/riso.css` imported from `main.tsx`. |
+| `index.html`                                                                 | Syne Mono + Inter via Google Fonts. `src/styles/riso.css` imported from `main.tsx`. |
 | `src/lib/registry.tsx`                                                       | `lessonComponents` + `LessonRuntime` (`TamboRegistryProvider`).             |
 | `src/lib/timing.ts`                                                          | Pure `buildBoundaries`. `tests/test_player_timing.mjs` imports this.        |
 | `src/components/LessonApp.tsx`                                               | Registry + `CodexActionProvider` + `ComponentRenderer`.                     |
 | `src/components/CodexActionProvider.tsx`                                     | `dispatch({ type, payload })` → `POST /api/codex/action`.                   |
-| `src/components/{PromptComposer,LessonPlayer,NextChoices,TasteFeedback}.tsx` | Pre-made views. Look from `docs/riso-system.md`.                            |
+| `src/components/{PromptComposer,LessonPlayer,NextChoices,TasteFeedback}.tsx` | Pre-made views. Look from `docs/design-system.md`.                          |
 | `server/index.ts`                                                            | Event loop + run receipts. Vite proxies `/api` here. Never fal in the UI.   |
 | `POST /api/run`                                                              | `{ status: "submitted", run_id }` in ~1s.                                   |
 | `GET /api/run/:id`                                                           | Status + script/manifest. 404 if unknown.                                   |
@@ -104,4 +104,4 @@ fal CDN URLs expire. Copy finished media into `artifacts/educational-video/{run_
 3. No streamable-tool hint on anything that reaches fal.
 4. `propsSchema` carries a request/id, never a `video_url`.
 5. Registered in `src/lib/registry.tsx` with a description that says **when** to use it.
-6. Look comes from `src/styles/riso.css` / `docs/riso-system.md`, not shadcn defaults.
+6. Look comes from `src/styles/riso.css` / `docs/design-system.md`, not shadcn defaults.

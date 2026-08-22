@@ -1,5 +1,7 @@
 # Riso System
 
+> **Superseded by [`docs/design-system.md`](./design-system.md).** This file is an archive of the retired Risograph direction.
+
 The visual and behavioural spec for the learning page. Single source of truth for
 `page/riso.css`; also the shared style block the `slide_images` stage pastes into
 prompts, replacing the placeholder in

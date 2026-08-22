@@ -87,11 +87,11 @@ export function AgentChat() {
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="display">Agent</span>
+        <span className="eyebrow">Agent</span>
         <span className="chat-toggle-hint">{open ? "Hide" : "Show"}</span>
       </button>
       <div className="chat-body">
-        <h2 className="display misreg chat-heading">Agent</h2>
+        <p className="eyebrow chat-heading">Agent</p>
         <div className="chat-log" ref={logRef}>
           {turns.length === 0 ? (
             <p className="dim">

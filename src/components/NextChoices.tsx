@@ -41,7 +41,7 @@ export function NextChoices({ run_id }: NextChoicesProps) {
   if (error) {
     return (
       <section>
-        <h2 className="display misreg">What next?</h2>
+        <h2>What next?</h2>
         <p className="dim">{error}</p>
       </section>
     );
@@ -50,7 +50,7 @@ export function NextChoices({ run_id }: NextChoicesProps) {
   if (!choices) {
     return (
       <section>
-        <h2 className="display misreg">What next?</h2>
+        <h2>What next?</h2>
         <p className="receipt">Loading choices…</p>
       </section>
     );
@@ -58,7 +58,7 @@ export function NextChoices({ run_id }: NextChoicesProps) {
 
   return (
     <section className="next-sec snap">
-      <h2 className="display misreg">What next?</h2>
+      <h2>What next?</h2>
       <div className="choices">
         {choices.map((n) => {
           const dir = dirOf(n.label);

@@ -1,5 +1,4 @@
 import { useCodexAction } from "@/components/CodexActionProvider";
-import { WidthFollowTitle } from "@/components/WidthFollowTitle";
 import { PROFILE_STORAGE_KEY, slugFromName } from "@/lib/onboarding";
 import { createProfile } from "@/lib/profiles";
 import type { ProfileGateProps } from "@/lib/schemas";
@@ -39,7 +38,7 @@ export function ProfileGate(_props: ProfileGateProps) {
         })();
       }}
     >
-      <WidthFollowTitle>What should we call you?</WidthFollowTitle>
+      <h1 className="display">What should we call you?</h1>
       <p className="objective">
         Type your name. If you have been here before, we will open that
         profile. If not, we will start a short survey.
