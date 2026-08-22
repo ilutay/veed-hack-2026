@@ -45,3 +45,27 @@ Never read `.env.local`. Never echo `TAVILY_API_KEY`. The live path calls `scrip
 - Redacted provider request/response JSON under `00-topic-research/provider/`
 
 Read `references/tavily-contract.md` before changing auth, passes, payload fields, or artifact paths.
+
+## Onboarding
+
+Profile-stage tool, not a lesson run. `codex/tools/onboarding_research.py` researches stated interests, emits a multiple-choice quiz, then scores answers and recommends topics.
+
+```bash
+python3 codex/tools/onboarding_research.py \
+  --stage quiz \
+  --slug ada \
+  --output-dir artifacts/profiles/ada \
+  --interests "the dot-com bubble" "compound interest" \
+  --mode dry-run
+
+python3 codex/tools/onboarding_research.py \
+  --stage recommend \
+  --slug ada \
+  --output-dir artifacts/profiles/ada \
+  --answers-json '{"q-01":"b","q-02":"c","q-03":"b","q-04":"a","q-05":"c"}' \
+  --mode dry-run
+```
+
+Output is `onboarding-pack.json` plus `onboarding/status.json` and redacted provider JSON under `onboarding/provider/`. The UI reads the pack via Node; the browser must never see `correct_id`.
+
+Read `references/onboarding-contract.md` before changing CLI flags, passes, scoring thresholds, or artifact paths. Keep `topic_research.py` as the lesson-stage brief tool.

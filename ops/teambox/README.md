@@ -108,8 +108,9 @@ Create Linux users/groups so that:
 
 - `pioneer-gym` can connect to the action socket but cannot join the
   `teambox-codex` socket group.
-- `codex-runner` can connect to both Unix sockets but cannot read the protected
-  auth store.
+- `codex-runner` receives the Pioneer Gym action socket through systemd socket
+  activation, joins only `teambox-codex` for the private app-server socket, and
+  cannot read the web app environment or protected Codex auth store.
 - standalone release files and systemd/Caddy configuration are root-owned and
   not writable by either service user.
 

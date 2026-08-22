@@ -1,5 +1,6 @@
 import "./server-only";
 
+import { LIVE_CODEX_ACTION_DEADLINE_MS } from "../contracts/live-deadlines";
 import {
   TEAMBOX_FIXED_REPO_ROOT,
   createTeamboxAppServerCodexClient,
@@ -11,7 +12,6 @@ import {
 import { runCodexAction } from "./runner";
 
 const SYSTEMD_FIRST_LISTEN_FD = 3;
-const LIVE_ACTION_DEADLINE_MS = 15_000;
 
 function requireSingleSystemdSocket(): number {
   if (
@@ -28,7 +28,7 @@ const runAction: TeamboxGatewayActionRunner = async (request, options) =>
   (await runCodexAction(request, {
     mode: "sdk",
     repoRoot: TEAMBOX_FIXED_REPO_ROOT,
-    deadlineMs: LIVE_ACTION_DEADLINE_MS,
+    deadlineMs: LIVE_CODEX_ACTION_DEADLINE_MS,
     signal: options.signal,
     client,
     throwOnSdkError: true,

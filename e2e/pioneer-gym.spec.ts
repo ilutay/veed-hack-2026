@@ -86,6 +86,44 @@ test("invalid dynamic props stop before Tambo and recover only through the certi
   expect(gymResponseCount).toBe(2);
 });
 
+test("independent learner pages start distinct gym sessions", async ({ browser }) => {
+  const firstContext = await browser.newContext();
+  const secondContext = await browser.newContext();
+  const first = await firstContext.newPage();
+  const second = await secondContext.newPage();
+  const sessionIds: string[] = [];
+
+  await unlock(first);
+  await secondContext.addCookies(await firstContext.cookies());
+  await second.goto("/");
+  await expect(second.getByRole("heading", { name: "Train the decision, not the answer." })).toBeVisible();
+
+  for (const page of [first, second]) {
+    page.on("request", (request) => {
+      if (request.method() !== "POST" || !request.url().endsWith("/api/gym")) return;
+      const payload = request.postDataJSON() as { sessionId?: unknown };
+      if (typeof payload.sessionId === "string") sessionIds.push(payload.sessionId);
+    });
+    await page.route("**/api/gym", (route) =>
+      route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "Session ID captured by browser test." }),
+      }),
+    );
+    await page.getByLabel("What do you want to learn?").fill("Teach me visual hierarchy.");
+  }
+
+  await Promise.all([
+    first.getByRole("button", { name: "Build my first rep" }).click(),
+    second.getByRole("button", { name: "Build my first rep" }).click(),
+  ]);
+  await expect.poll(() => sessionIds.length).toBe(2);
+  expect(new Set(sessionIds).size).toBe(2);
+  await firstContext.close();
+  await secondContext.close();
+});
+
 test("Taste Labs is gated and can only open the tracked fixture", async ({ page }) => {
   const externalRequests: string[] = [];
   page.on("request", (request) => {

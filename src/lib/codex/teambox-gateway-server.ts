@@ -2,6 +2,7 @@ import "./server-only";
 
 import { createServer, type Server, type Socket } from "node:net";
 
+import { LIVE_TEAMBOX_GATEWAY_DEADLINE_MS } from "../contracts/live-deadlines";
 import {
   TEAMBOX_ACTION_PROTOCOL_VERSION,
   TeamboxFrameDecoder,
@@ -19,7 +20,6 @@ import type {
   CodexActionRunResult,
 } from "./types";
 
-const GATEWAY_DEADLINE_MS = 16_000;
 const CONNECTION_TIMEOUT_MS = 20_000;
 const MAX_CONCURRENT_ACTIONS = 2;
 
@@ -82,7 +82,7 @@ export async function handleTeamboxActionValue(
     const error = new Error("TeamBox action deadline exceeded");
     abort.abort(error);
     rejectDeadline?.(error);
-  }, GATEWAY_DEADLINE_MS);
+  }, LIVE_TEAMBOX_GATEWAY_DEADLINE_MS);
   try {
     const result = await Promise.race([
       runAction(envelope.actionRequest, { signal: abort.signal }),

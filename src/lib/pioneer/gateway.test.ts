@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { canonicalizeJson } from "./canonical";
-import { createPioneerTextGateway, PioneerGatewayError } from "./gateway";
+import {
+  createPioneerTextGateway,
+  PIONEER_MAX_RESPONSE_UTF8_BYTES,
+  PioneerGatewayError,
+} from "./gateway";
 import { makeValidateFixture } from "./gateway.test-fixtures";
 import {
   RecommendNextInputSchema,
@@ -210,7 +214,7 @@ describe("PioneerTextGateway", () => {
       candidateContentHash: request.candidate.provenance.contentHash,
       contentHashVersion: "gym-jcs-v1",
       judgment: "PASS",
-      intendedTeachingSignal: "Recognize a clear focal point.",
+      intendedTeachingSignal: request.candidate.learningObjective,
       isolatedFactors: ["hierarchy"],
       confounds: [],
       reasonCodes: ["signal_isolated"],
@@ -228,6 +232,105 @@ describe("PioneerTextGateway", () => {
     const result = await gateway.validateExercise(input);
     expect(result.kind).toBe("live");
     expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("fails P1 PASS closed when the teaching signal differs from the candidate objective", async () => {
+    const { input, rawFalText } = makeValidateFixture();
+    const fetchImpl = mockCompletion<ValidateExerciseRequest>((request) => ({
+      validationId: "validation:p1:wrong-signal",
+      requestId: request.requestId,
+      bindingEcho: {
+        bindingId: request.binding.bindingId,
+        requestProjectionSha256: request.binding.requestProjectionSha256,
+      },
+      exerciseId: request.candidate.exerciseId,
+      exerciseRevision: request.candidate.revision,
+      scope: request.scope,
+      goalDefinitionId: request.candidate.goalDefinitionId,
+      candidateContentHash: request.candidate.provenance.contentHash,
+      contentHashVersion: "gym-jcs-v1",
+      judgment: "PASS",
+      intendedTeachingSignal: "Recognize visual rhythm.",
+      isolatedFactors: ["hierarchy"],
+      confounds: [],
+      reasonCodes: ["signal_isolated"],
+      confidence: "high",
+      modelVersion: "pioneer-test",
+      createdAt: NOW,
+    }));
+    const gateway = createPioneerTextGateway({
+      workflowMode: "live",
+      apiKey: "TEST_ONLY",
+      model: "pioneer-test",
+      fetchImpl,
+      resolveFalText: () => rawFalText,
+    });
+
+    const result = await gateway.validateExercise(input);
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(result).toMatchObject({
+      kind: "fallback",
+      fallback: { reason: "binding_mismatch" },
+    });
+    expect(gateway.getTransportRecord("request:p1:test")).toMatchObject({
+      status: "invalid_response",
+      fallbackReason: "binding_mismatch",
+    });
+  });
+
+  it("fails closed before parsing an oversized Pioneer response", async () => {
+    const { input, rawFalText } = makeValidateFixture();
+    const fetchImpl = vi.fn(async () =>
+      new Response("x".repeat(PIONEER_MAX_RESPONSE_UTF8_BYTES + 1), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    const gateway = createPioneerTextGateway({
+      workflowMode: "live",
+      apiKey: "TEST_ONLY",
+      model: "pioneer-test",
+      fetchImpl,
+      resolveFalText: () => rawFalText,
+    });
+
+    const result = await gateway.validateExercise(input);
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(result).toMatchObject({
+      kind: "fallback",
+      fallback: { reason: "transport_error" },
+    });
+  });
+
+  it("rejects an ambiguous multi-choice Pioneer response", async () => {
+    const { input, rawFalText } = makeValidateFixture();
+    const fetchImpl = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          choices: [
+            { message: { content: "{}" } },
+            { message: { content: "{}" } },
+          ],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+    const gateway = createPioneerTextGateway({
+      workflowMode: "live",
+      apiKey: "TEST_ONLY",
+      model: "pioneer-test",
+      fetchImpl,
+      resolveFalText: () => rawFalText,
+    });
+
+    const result = await gateway.validateExercise(input);
+
+    expect(result).toMatchObject({
+      kind: "fallback",
+      fallback: { reason: "transport_error" },
+    });
   });
 
   it("accepts a supplied eligible P2 recommendation and no executable command", async () => {

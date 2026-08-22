@@ -42,6 +42,7 @@ export const P1_MAX_UTF8_BYTES = 32_768 as const;
 export const P1_MAX_TOKENS = 8_000 as const;
 export const P2_MAX_UTF8_BYTES = 24_576 as const;
 export const P2_MAX_TOKENS = 6_000 as const;
+export const PIONEER_MAX_RESPONSE_UTF8_BYTES = 65_536 as const;
 
 export type PioneerJob = "validate_rep" | "recommend_next";
 export type WorkflowMode = "dry-run" | "test" | "live";
@@ -186,13 +187,16 @@ const OpenAiCompatibleResponseSchema = z
           .object({
             message: z
               .object({
-                content: z.string().min(1),
+                content: z
+                  .string()
+                  .min(1)
+                  .max(PIONEER_MAX_RESPONSE_UTF8_BYTES),
               })
               .passthrough(),
           })
           .passthrough(),
       )
-      .min(1),
+      .length(1),
   })
   .passthrough();
 
@@ -548,6 +552,40 @@ function parseStrictJson(text: string): unknown {
   }
 }
 
+async function readBoundedResponseText(response: Response): Promise<string> {
+  if (!response.body) {
+    throw new Error("Pioneer transport returned an empty response body");
+  }
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let byteLength = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+      byteLength += value.byteLength;
+      if (byteLength > PIONEER_MAX_RESPONSE_UTF8_BYTES) {
+        await reader.cancel();
+        throw new Error("Pioneer response exceeds its UTF-8 byte bound");
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const body = new Uint8Array(byteLength);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder("utf-8", { fatal: true }).decode(body);
+}
+
 async function invokePioneer(
   requestText: string,
   config: ResolvedGatewayConfig,
@@ -573,7 +611,9 @@ async function invokePioneer(
     if (!response.ok) {
       throw new Error(`Pioneer transport returned HTTP ${response.status}`);
     }
-    const completion = OpenAiCompatibleResponseSchema.parse(await response.json());
+    const completion = OpenAiCompatibleResponseSchema.parse(
+      parseStrictJson(await readBoundedResponseText(response)),
+    );
     return completion.choices[0].message.content;
   } finally {
     clearTimeout(timeout);
@@ -618,9 +658,10 @@ function validateP1Semantics(
   }
   if (
     response.judgment === "PASS" &&
-    candidate.textStimulusManifest.crossVariantParityChecks.some(
-      (check) => check.status.value === "unverified",
-    )
+    (response.intendedTeachingSignal !== candidate.learningObjective ||
+      candidate.textStimulusManifest.crossVariantParityChecks.some(
+        (check) => check.status.value === "unverified",
+      ))
   ) {
     return false;
   }

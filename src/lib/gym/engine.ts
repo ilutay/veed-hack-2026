@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import type { InterpretGoalOutput } from "../codex/types";
 import { getGymComponentDefinition } from "../contracts/gym-components";
+import { LIVE_GYM_PROVIDER_DEADLINE_MS } from "../contracts/live-deadlines";
 import {
   codexUiCommandSchema,
   gymApiRequestSchema,
@@ -43,11 +44,12 @@ import {
 } from "./providers";
 
 const DEFAULT_SESSION_TTL_MS = 15 * 60 * 1_000;
-const DEFAULT_PROVIDER_DEADLINE_MS = 8_000;
 const DEFAULT_MAX_ACTIVE_SESSIONS = 2;
 const DEFAULT_MAX_RETAINED_SESSIONS = 20;
 const DEFAULT_MAX_PROVIDER_CALLS = 2;
 const DEFAULT_SESSION_PROVIDER_BUDGET = 3;
+const SUPPORTED_GOAL_DEFINITION_ID = "visual-hierarchy.short-form-v1";
+const UNSUPPORTED_GOAL_DEFINITION_ID = "unsupported.v1";
 
 type EnginePhase =
   | "initializing"
@@ -64,6 +66,7 @@ interface GymSession {
   sessionId: string;
   createdAtMs: number;
   expiresAtMs: number;
+  absoluteExpiresAtMs: number;
   phase: EnginePhase;
   rawPrompt: string;
   goalInstanceId: string;
@@ -304,7 +307,7 @@ export class GymEngine {
       options.codexCallsPerSession ?? DEFAULT_SESSION_PROVIDER_BUDGET;
     this.providerGate = new ProviderGate(
       options.maxConcurrentProviderCalls ?? DEFAULT_MAX_PROVIDER_CALLS,
-      options.providerDeadlineMs ?? DEFAULT_PROVIDER_DEADLINE_MS,
+      options.providerDeadlineMs ?? LIVE_GYM_PROVIDER_DEADLINE_MS,
     );
   }
 
@@ -395,7 +398,6 @@ export class GymEngine {
           "This idempotency key was already used for a different event.",
         );
       }
-      this.touch(session!);
       return prior.response;
     }
 
@@ -453,6 +455,7 @@ export class GymEngine {
       sessionId,
       createdAtMs: now,
       expiresAtMs: now + this.sessionTtlMs,
+      absoluteExpiresAtMs: now + this.sessionTtlMs,
       phase: "initializing",
       rawPrompt,
       goalInstanceId: this.makeId("goal"),
@@ -470,6 +473,7 @@ export class GymEngine {
     const now = this.now().getTime();
     session.createdAtMs = now;
     session.expiresAtMs = now + this.sessionTtlMs;
+    session.absoluteExpiresAtMs = now + this.sessionTtlMs;
     session.phase = "initializing";
     session.rawPrompt = rawPrompt;
     session.goalInstanceId = this.makeId("goal");
@@ -523,19 +527,41 @@ export class GymEngine {
       ),
     ]);
 
+    const expectedGoalDefinitionId =
+      goal.supportStatus === "unsupported"
+        ? UNSUPPORTED_GOAL_DEFINITION_ID
+        : SUPPORTED_GOAL_DEFINITION_ID;
     if (
       goal.goalInstanceId !== session.goalInstanceId ||
-      goal.rawPrompt !== event.payload.rawPrompt
+      goal.rawPrompt !== event.payload.rawPrompt ||
+      goal.sessionTimeboxSeconds !== 90 ||
+      goal.goalDefinitionId !== expectedGoalDefinitionId
     ) {
       throw new GymError(
         503,
         "provider_contract_violation",
-        "Codex returned an interpretation that was not bound to this goal event.",
+        "Codex returned an interpretation whose input, support status, or goal definition was not bound to this goal event.",
       );
     }
 
     session.goal = goal;
     session.rawPrompt = event.payload.rawPrompt;
+    if (goal.supportStatus === "unsupported") {
+      const shell = this.createShellCommand(session.sessionId);
+      session.currentCommand = shell;
+      session.phase = "complete";
+      const interpretation = goal.interpretationShownToHuman.trim();
+      return {
+        sessionId: session.sessionId,
+        command: shell,
+        receipts: session.receipts,
+        progress: learningProgress("prompt", "not_started"),
+        message: interpretation
+          ? `${interpretation.slice(0, 360)} No exercise was issued; try a visual-hierarchy or short-form product-video goal.`
+          : "Codex marked this goal unsupported, so no exercise was issued. Try a visual-hierarchy or short-form product-video goal.",
+      };
+    }
+
     const p1Receipt = this.receipt(
       "p1_validation",
       validation.judgment === "PASS" ? "Teaching signal certified" : "Teaching signal not certified",
@@ -817,6 +843,16 @@ export class GymEngine {
         409,
         "stale_command",
         "The renderer failure came from a stale component instance.",
+      );
+    }
+    if (
+      session.phase === "complete" ||
+      current.commandKind !== "exercise"
+    ) {
+      throw new GymError(
+        409,
+        "stale_command",
+        "A completed or non-exercise command cannot be replaced with a fallback exercise.",
       );
     }
 
@@ -1209,13 +1245,21 @@ export class GymEngine {
   }
 
   private touch(session: GymSession) {
-    session.expiresAtMs = this.now().getTime() + this.sessionTtlMs;
+    session.expiresAtMs = Math.min(
+      this.now().getTime() + this.sessionTtlMs,
+      session.absoluteExpiresAtMs,
+    );
   }
 
   private pruneExpired() {
     const now = this.now().getTime();
     for (const [sessionId, session] of this.sessions) {
-      if (session.expiresAtMs <= now) this.sessions.delete(sessionId);
+      if (
+        session.expiresAtMs <= now ||
+        session.absoluteExpiresAtMs <= now
+      ) {
+        this.sessions.delete(sessionId);
+      }
     }
   }
 }

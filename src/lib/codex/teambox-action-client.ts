@@ -3,6 +3,7 @@ import "./server-only";
 import { randomUUID } from "node:crypto";
 import { createConnection } from "node:net";
 
+import { LIVE_TEAMBOX_CLIENT_DEADLINE_MS } from "../contracts/live-deadlines";
 import {
   TEAMBOX_ACTION_PROTOCOL_VERSION,
   TEAMBOX_ACTION_SOCKET_PATH,
@@ -18,8 +19,6 @@ import type {
   CodexActionRequestMap,
   CodexActionRunResult,
 } from "./types";
-
-const CLIENT_DEADLINE_MS = 18_000;
 
 export interface TeamboxActionRunOptions {
   signal?: AbortSignal;
@@ -108,7 +107,7 @@ function exchangeOneFrame(
             "TeamBox action gateway deadline exceeded",
           ),
         ),
-      CLIENT_DEADLINE_MS,
+      LIVE_TEAMBOX_CLIENT_DEADLINE_MS,
     );
 
     signal?.addEventListener("abort", onAbort, { once: true });

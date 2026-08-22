@@ -119,6 +119,24 @@ function acknowledgeRequest(response: GymApiResponse, eventId: string) {
   };
 }
 
+function componentFailureRequest(response: GymApiResponse, eventId: string) {
+  return {
+    sessionId: response.sessionId,
+    event: {
+      eventId,
+      idempotencyKey: eventId,
+      sessionId: response.sessionId,
+      sourceComponentId: response.command.component.id,
+      clientCreatedAt: "2026-08-22T12:00:03.000Z",
+      type: "ui.component_failed" as const,
+      payload: {
+        errorCode: "component_render_exception",
+        failedCommandId: response.command.commandId,
+      },
+    },
+  };
+}
+
 async function completeDirectJourney(engine: GymEngine, sessionId: string) {
   const baseline = await engine.handle(startRequest(sessionId));
   const baselineFeedback = await engine.handle(
@@ -325,6 +343,74 @@ describe("GymEngine", () => {
     expect(pioneer.validationCalls + pioneer.choiceCalls).toBe(3);
   });
 
+  it("fails closed when Codex declares the goal unsupported", async () => {
+    class UnsupportedCodex extends DeterministicSkillCodexClient {
+      override async interpretGoal(
+        input: InterpretGoalInput,
+        context: ProviderCallContext,
+      ) {
+        const goal = await super.interpretGoal(input, context);
+        return {
+          ...goal,
+          goalDefinitionId: "unsupported.v1",
+          domain: "unsupported",
+          targetCapability: "outside the current demo envelope",
+          supportStatus: "unsupported" as const,
+          interpretationShownToHuman:
+            "This goal is outside the supported demo envelope.",
+        };
+      }
+    }
+
+    const engine = createGymEngine({
+      codexClient: new UnsupportedCodex(),
+      makeId: idFactory(),
+    });
+    const response = await engine.handle(startRequest("session_unsupported"));
+
+    expect(response.command).toMatchObject({
+      commandKind: "shell",
+      component: { name: "LearningPrompt" },
+    });
+    expect(response.progress).toMatchObject({ learningStatus: "not_started" });
+    expect(response.message).toContain("No exercise was issued");
+    expect(engine.health().activeSessions).toBe(0);
+  });
+
+  it.each([
+    [
+      "unsupported definition for a supported goal",
+      "mapped_with_explanation",
+      "unsupported.v1",
+    ],
+    [
+      "supported definition for an unsupported goal",
+      "unsupported",
+      "visual-hierarchy.short-form-v1",
+    ],
+  ] as const)("rejects %s", async (_label, supportStatus, goalDefinitionId) => {
+    class DriftedGoalCodex extends DeterministicSkillCodexClient {
+      override async interpretGoal(
+        input: InterpretGoalInput,
+        context: ProviderCallContext,
+      ) {
+        const goal = await super.interpretGoal(input, context);
+        return { ...goal, supportStatus, goalDefinitionId };
+      }
+    }
+
+    const engine = createGymEngine({
+      codexClient: new DriftedGoalCodex(),
+      makeId: idFactory(),
+    });
+    await expect(
+      engine.handle(startRequest(`session_goal_drift_${supportStatus}`)),
+    ).rejects.toMatchObject({
+      status: 503,
+      code: "provider_contract_violation",
+    });
+  });
+
   it("lets Pioneer skip the retry after criterion evidence is already met", async () => {
     const engine = createGymEngine({ makeId: idFactory() });
     const baseline = await engine.handle(startRequest("session_direct"));
@@ -335,6 +421,50 @@ describe("GymEngine", () => {
       acknowledgeRequest(feedback, "event_direct_ack"),
     );
     expect(next.command.component.name).toBe("LayerOrderTransferGym");
+  });
+
+  it("does not reopen a completed session after a component failure", async () => {
+    const engine = createGymEngine({ makeId: idFactory() });
+    const baseline = await engine.handle(
+      startRequest("session_complete_failure"),
+    );
+    const baselineFeedback = await engine.handle(
+      submitRequest(
+        baseline,
+        { choiceId: "frame-b" },
+        "event_complete_failure_baseline",
+      ),
+    );
+    const transfer = await engine.handle(
+      acknowledgeRequest(
+        baselineFeedback,
+        "event_complete_failure_transfer",
+      ),
+    );
+    const transferFeedback = await engine.handle(
+      submitRequest(
+        transfer,
+        { layerOrder: ["promise", "context", "proof", "support", "action"] },
+        "event_complete_failure_submission",
+      ),
+    );
+    const complete = await engine.handle(
+      acknowledgeRequest(
+        transferFeedback,
+        "event_complete_failure_acknowledgement",
+      ),
+    );
+
+    expect(complete.command).toMatchObject({
+      commandKind: "shell",
+      component: { name: "LearningPrompt" },
+    });
+    await expect(
+      engine.handle(
+        componentFailureRequest(complete, "event_complete_component_failure"),
+      ),
+    ).rejects.toMatchObject({ status: 409, code: "stale_command" });
+    expect(engine.health().activeSessions).toBe(0);
   });
 
   it("rejects stale bindings and conflicting reuse of an idempotency key", async () => {
@@ -380,6 +510,61 @@ describe("GymEngine", () => {
       ),
     ).rejects.toMatchObject({ status: 409, code: "session_conflict" });
     await expect(engine.handle(startRequest("session_three"))).resolves.toBeDefined();
+  });
+
+  it("does not refresh session expiry when replaying a cached response", async () => {
+    let nowMs = Date.parse("2026-08-22T12:00:00.000Z");
+    const engine = createGymEngine({
+      makeId: idFactory(),
+      now: () => new Date(nowMs),
+      sessionTtlMs: 1_000,
+    });
+    const request = startRequest("session_cached_replay_expiry");
+    const baseline = await engine.handle(request);
+
+    nowMs += 900;
+    await expect(engine.handle(request)).resolves.toEqual(baseline);
+    nowMs += 101;
+
+    expect(engine.health().activeSessions).toBe(0);
+    await expect(
+      engine.handle(
+        submitRequest(
+          baseline,
+          { choiceId: "frame-b" },
+          "event_cached_replay_after_expiry",
+        ),
+      ),
+    ).rejects.toMatchObject({ status: 409, code: "session_conflict" });
+  });
+
+  it("caps absolute session lifetime despite fresh accepted events", async () => {
+    let nowMs = Date.parse("2026-08-22T12:00:00.000Z");
+    const engine = createGymEngine({
+      makeId: idFactory(),
+      now: () => new Date(nowMs),
+      sessionTtlMs: 1_000,
+    });
+    const baseline = await engine.handle(
+      startRequest("session_absolute_lifetime"),
+    );
+
+    nowMs += 900;
+    const feedback = await engine.handle(
+      submitRequest(
+        baseline,
+        { choiceId: "frame-b" },
+        "event_absolute_lifetime_submission",
+      ),
+    );
+    nowMs += 101;
+
+    expect(engine.health().activeSessions).toBe(0);
+    await expect(
+      engine.handle(
+        acknowledgeRequest(feedback, "event_absolute_lifetime_after_expiry"),
+      ),
+    ).rejects.toMatchObject({ status: 409, code: "session_conflict" });
   });
 
   it("bounds retained TTL sessions and evicts the oldest completed session", async () => {

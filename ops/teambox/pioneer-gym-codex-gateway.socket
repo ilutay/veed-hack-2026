@@ -6,7 +6,9 @@ ListenStream=/run/pioneer-gym/codex-action.sock
 SocketUser=codex-runner
 SocketGroup=pioneer-gym
 SocketMode=0660
-DirectoryMode=0750
+# The web service must traverse /run/pioneer-gym; the socket node's 0660 mode
+# and pioneer-gym group remain the authorization boundary.
+DirectoryMode=0755
 RemoveOnStop=true
 Service=pioneer-gym-codex-gateway.service
 

@@ -2,6 +2,7 @@
 
 import {
   useCallback,
+  useEffect,
   useId,
   useRef,
   useState,
@@ -15,6 +16,7 @@ import {
   type JourneyProgress,
   type UiReceipt,
 } from "@/lib/tambo/gym-contract";
+import { LIVE_GYM_UI_DEADLINE_MS } from "@/lib/contracts/live-deadlines";
 
 import { CodexActionProvider } from "./codex-action-context";
 import styles from "./gym.module.css";
@@ -131,10 +133,30 @@ export interface GymExperienceProps {
   endpoint?: string;
 }
 
+function createBrowserSessionId(): string {
+  const cryptoApi = globalThis.crypto;
+  if (typeof cryptoApi?.randomUUID === "function") {
+    return `session_${cryptoApi.randomUUID()}`;
+  }
+
+  const entropy = new Uint32Array(4);
+  if (typeof cryptoApi?.getRandomValues === "function") {
+    cryptoApi.getRandomValues(entropy);
+  } else {
+    entropy.set(Array.from({ length: 4 }, () => Math.floor(Math.random() * 2 ** 32)));
+  }
+  const randomPart = Array.from(entropy, (value) => value.toString(16)).join("");
+  return `session_${Date.now().toString(36)}_${randomPart}`;
+}
+
 export function GymExperience({ endpoint = "/api/gym" }: GymExperienceProps) {
   const reactId = useId().replaceAll(":", "");
-  const [sessionId, setSessionId] = useState(`session_${reactId}`);
-  const [command, setCommand] = useState<CodexUiCommand>(() => bootstrapCommand(`session_${reactId}`));
+  const bootstrapSessionId = `session_bootstrap_${reactId}`;
+  const [sessionId, setSessionId] = useState(bootstrapSessionId);
+  const [command, setCommand] = useState<CodexUiCommand>(() =>
+    bootstrapCommand(bootstrapSessionId),
+  );
+  const [sessionReady, setSessionReady] = useState(false);
   const [receipts, setReceipts] = useState<UiReceipt[]>([]);
   const [progress, setProgress] = useState<JourneyProgress>(initialProgress);
   const [message, setMessage] = useState<string | null>(null);
@@ -143,6 +165,16 @@ export function GymExperience({ endpoint = "/api/gym" }: GymExperienceProps) {
   const [pendingState, setPendingState] = useState({ title: "", detail: "" });
   const lastRequest = useRef<GymApiRequest | null>(null);
 
+  useEffect(() => {
+    const initialize = window.setTimeout(() => {
+      const browserSessionId = createBrowserSessionId();
+      setSessionId(browserSessionId);
+      setCommand(bootstrapCommand(browserSessionId));
+      setSessionReady(true);
+    }, 0);
+    return () => window.clearTimeout(initialize);
+  }, []);
+
   const sendRequest = useCallback(
     async (request: GymApiRequest) => {
       setPending(true);
@@ -150,7 +182,10 @@ export function GymExperience({ endpoint = "/api/gym" }: GymExperienceProps) {
       lastRequest.current = request;
 
       const controller = new AbortController();
-      const timeout = window.setTimeout(() => controller.abort(), 15_000);
+      const timeout = window.setTimeout(
+        () => controller.abort(),
+        LIVE_GYM_UI_DEADLINE_MS,
+      );
 
       try {
         const response = await fetch(endpoint, {
@@ -184,7 +219,7 @@ export function GymExperience({ endpoint = "/api/gym" }: GymExperienceProps) {
         const timedOut = caught instanceof DOMException && caught.name === "AbortError";
         setError(
           timedOut
-            ? "The request hit the 15-second UI deadline. Nothing was retried automatically."
+            ? "The request hit the 22-second UI deadline. Nothing was retried automatically."
             : caught instanceof Error
               ? caught.message
               : "The gym request failed before a new command was accepted.",
@@ -199,15 +234,17 @@ export function GymExperience({ endpoint = "/api/gym" }: GymExperienceProps) {
 
   const emit = useCallback(
     async (event: HumanUiEvent) => {
+      if (!sessionReady) return;
       setPendingState(pendingCopy(event));
       await sendRequest({ sessionId, event });
     },
-    [sendRequest, sessionId],
+    [sendRequest, sessionId, sessionReady],
   );
 
   const retry = () => {
     if (lastRequest.current) void sendRequest(lastRequest.current);
   };
+  const interactionPending = pending || !sessionReady;
 
   return (
     <main className={styles.gymRoot}>
@@ -237,21 +274,21 @@ export function GymExperience({ endpoint = "/api/gym" }: GymExperienceProps) {
         {error ? (
           <div className={styles.errorBanner} role="alert">
             <span>{error}</span>
-            <button disabled={pending} onClick={retry} type="button">Retry same receipt</button>
+            <button disabled={interactionPending} onClick={retry} type="button">Retry same receipt</button>
           </div>
         ) : null}
 
         <div className={styles.experienceGrid}>
-          <section className={`${styles.stage} ${pending ? styles.stageBusy : ""}`} aria-busy={pending}>
-            <CodexActionProvider command={command} emit={emit} pending={pending}>
+          <section className={`${styles.stage} ${interactionPending ? styles.stageBusy : ""}`} aria-busy={interactionPending}>
+            <CodexActionProvider command={command} emit={emit} pending={interactionPending}>
               <TamboReceiptRenderer command={command} />
             </CodexActionProvider>
-            {pending ? (
+            {interactionPending ? (
               <div className={styles.pendingVeil} aria-live="polite">
                 <div className={styles.pendingCard}>
                   <div className={styles.pulseLine} />
-                  <strong>{pendingState.title}</strong>
-                  <p>{pendingState.detail}</p>
+                  <strong>{sessionReady ? pendingState.title : "Preparing a private learner session"}</strong>
+                  <p>{sessionReady ? pendingState.detail : "Binding this page to a fresh session before accepting input."}</p>
                 </div>
               </div>
             ) : null}

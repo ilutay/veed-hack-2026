@@ -7,7 +7,7 @@ After=pioneer-gym-codex-gateway.socket teambox-codex.service
 Type=simple
 User=codex-runner
 Group=codex-runner
-SupplementaryGroups=pioneer-gym teambox-codex
+SupplementaryGroups=teambox-codex
 WorkingDirectory=/srv/codex-workspaces/pioneer-gym/veed-hack-2026
 ExecStart=/usr/bin/node /srv/codex-workspaces/pioneer-gym/veed-hack-2026/ops/teambox/dist/src/lib/codex/teambox-gateway-main.js
 Restart=on-failure
@@ -42,7 +42,7 @@ SystemCallArchitectures=native
 SystemCallFilter=@system-service
 SystemCallErrorNumber=EPERM
 ReadOnlyPaths=/srv/codex-workspaces/pioneer-gym/veed-hack-2026
-InaccessiblePaths=-/var/lib/teambox-codex -/root/.codex -/home
+InaccessiblePaths=-/etc/pioneer-gym -/var/lib/teambox-codex -/root/.codex -/home
 TasksMax=64
 MemoryMax=512M
 
