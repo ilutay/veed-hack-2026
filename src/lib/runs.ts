@@ -1,6 +1,7 @@
-import { cp, mkdir, readFile, stat } from "node:fs/promises";
+import { cp, mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { newId } from "./codex";
+import { spawnWorkflow } from "./pipeline";
 
 export const FIXTURE_RUN_ID = "fixture-dotcom";
 
@@ -11,6 +12,8 @@ export type RunStatus = "pending" | "ready" | "failed";
 
 export type RunSnapshot = {
   status: RunStatus;
+  stage?: string;
+  error?: string;
   run_id: string;
   paths: {
     lesson_script: string;
@@ -21,10 +24,6 @@ export type RunSnapshot = {
   manifest: unknown | null;
   timings: unknown | null;
 };
-
-function workflowMode(): string {
-  return process.env.WORKFLOW_MODE || "dry-run";
-}
 
 export function resolveRunDir(runId: string): string {
   if (runId === FIXTURE_RUN_ID || runId === "fixture") return FIXTURE_DIR;
@@ -57,27 +56,50 @@ async function readJson(file: string): Promise<unknown | null> {
   }
 }
 
-/** Create a run without blocking on fal/Tavily. Dry-run copies the fixture. */
-export async function startRun(): Promise<{
+/** Demo path: copy the tracked fixture. Instant, no providers. */
+export async function startFixtureRun(): Promise<{
   run_id: string;
   status: "submitted";
 }> {
-  const mode = workflowMode();
-  if (mode !== "dry-run" && mode !== "") {
-    // UI routes never call fal or Tavily, even in live — they only mint a receipt.
-    // Live generation stays in the Python pipeline.
-  }
-
   const run_id = newId("run");
   const dest = path.join(ARTIFACTS_DIR, run_id);
   await mkdir(ARTIFACTS_DIR, { recursive: true });
   try {
     await cp(FIXTURE_DIR, dest, { recursive: true });
   } catch {
-    // Copy failed (readonly fs, missing fixture) — point at the tracked fixture.
     return { run_id: FIXTURE_RUN_ID, status: "submitted" };
   }
   return { run_id, status: "submitted" };
+}
+
+/** Product path: mint a receipt and spawn topic_research → script → media. */
+export async function startWorkflowRun(topic: string): Promise<{
+  run_id: string;
+  status: "submitted";
+}> {
+  const trimmed = topic.trim();
+  if (!trimmed) throw new Error("topic required");
+  const run_id = newId("run");
+  const dest = path.join(ARTIFACTS_DIR, run_id);
+  await mkdir(dest, { recursive: true });
+  await writeFile(
+    path.join(dest, "status.json"),
+    JSON.stringify(
+      { status: "pending", stage: "queued", run_id, topic: trimmed },
+      null,
+      2,
+    ) + "\n",
+  );
+  await spawnWorkflow(run_id, trimmed);
+  return { run_id, status: "submitted" };
+}
+
+/** @deprecated use startFixtureRun or startWorkflowRun */
+export async function startRun(): Promise<{
+  run_id: string;
+  status: "submitted";
+}> {
+  return startFixtureRun();
 }
 
 export async function readRun(runId: string): Promise<RunSnapshot | null> {
@@ -92,9 +114,17 @@ export async function readRun(runId: string): Promise<RunSnapshot | null> {
   const script = await readJson(path.join(dir, paths.lesson_script));
   const manifest = await readJson(path.join(dir, paths.asset_manifest));
   const timings = await readJson(path.join(dir, paths.timings));
+  const meta = (await readJson(path.join(dir, "status.json"))) as {
+    status?: string;
+    stage?: string;
+    error?: string;
+  } | null;
   const ready = script !== null && manifest !== null;
+  const failed = meta?.status === "failed";
   return {
-    status: ready ? "ready" : "pending",
+    status: failed ? "failed" : ready ? "ready" : "pending",
+    stage: meta?.stage,
+    error: failed ? meta?.error : undefined,
     run_id: runId,
     paths,
     script,

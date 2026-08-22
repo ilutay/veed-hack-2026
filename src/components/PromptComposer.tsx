@@ -6,8 +6,9 @@ import type { PromptComposerProps } from "@/lib/schemas";
 import { useState } from "react";
 
 export function PromptComposer({ seed_topic }: PromptComposerProps) {
-  const { dispatch, pending } = useCodexAction();
+  const { dispatch, pending, mode } = useCodexAction();
   const [topic, setTopic] = useState(seed_topic ?? "");
+  const demo = mode === "demo";
 
   return (
     <form
@@ -19,10 +20,15 @@ export function PromptComposer({ seed_topic }: PromptComposerProps) {
         void dispatch({ type: "topic_submitted", payload: { topic: value } });
       }}
     >
-      <WidthFollowTitle>What do you want to learn?</WidthFollowTitle>
+      {demo ? (
+        <WidthFollowTitle>What do you want to learn?</WidthFollowTitle>
+      ) : (
+        <h1 className="display misreg">What do you want to learn?</h1>
+      )}
       <p className="objective">
-        Type a topic. Codex starts a pipeline run and this page mounts a player
-        against the receipt — it does not wait for a render.
+        {demo
+          ? "Demo mode plays the fixture lesson. The title stretches under the pointer."
+          : "Type a topic. Codex researches it, writes a 15-second script, then generates slides and voiceover."}
       </p>
       <div className="composer-row">
         <input

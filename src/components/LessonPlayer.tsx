@@ -44,6 +44,8 @@ type Manifest = {
 
 type RunPayload = {
   status: string;
+  stage?: string;
+  error?: string;
   run_id: string;
   script: LessonScript | null;
   manifest: Manifest | null;
@@ -100,8 +102,13 @@ export function LessonPlayer({ run_id, runBase }: LessonPlayerProps) {
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const body = (await res.json()) as RunPayload;
           if (cancelled) return;
-          if (body.status === "ready" && body.script && body.manifest) {
+          if (body.status === "failed") {
+            setError(body.error || "Pipeline failed");
             setPayload(body);
+            return;
+          }
+          setPayload(body);
+          if (body.status === "ready" && body.script && body.manifest) {
             setError(null);
             return;
           }
@@ -265,17 +272,28 @@ export function LessonPlayer({ run_id, runBase }: LessonPlayerProps) {
   }
 
   if (!script || !manifest) {
+    const stage = payload?.stage || "queued";
+    const label =
+      {
+        queued: "Queued",
+        research: "Researching the topic",
+        script: "Writing the lesson script",
+        media: "Generating slides and voiceover",
+        ready: "Almost ready",
+        failed: "Failed",
+      }[stage] || stage;
     return (
       <div className="wrap">
         <p className="receipt">
-          Waiting for artifacts{run_id ? ` · ${run_id}` : ""}
+          {label}
+          {run_id ? ` · ${run_id}` : ""}
         </p>
         <div className="stage">
           <div className="missing">
-            <strong className="display">Polling run</strong>
+            <strong className="display">{label}</strong>
             <span>
-              Codex returned a receipt. The player mounts when the manifest is
-              readable.
+              Receipt is in. The player mounts when the research brief, script,
+              and media manifest are on disk.
             </span>
           </div>
         </div>

@@ -1,12 +1,12 @@
-"use client";
-
 import {
   CodexActionProvider,
   useCodexAction,
+  type AppMode,
 } from "@/components/CodexActionProvider";
 import { LessonRenderError } from "@/components/LessonRenderError";
 import { LessonRuntime } from "@/lib/registry";
 import { ComponentRenderer } from "@tambo-ai/react";
+import { Link } from "react-router-dom";
 
 function BlockStage() {
   const { episodeId, turnId, blocks, pending, error } = useCodexAction();
@@ -29,12 +29,19 @@ function BlockStage() {
   );
 }
 
-export function LessonApp() {
+export function LessonApp({ mode = "workflow" }: { mode?: AppMode }) {
   return (
     <LessonRuntime>
-      <CodexActionProvider>
+      <CodexActionProvider mode={mode}>
         <div className="wrap">
           <BlockStage />
+          <p className="receipt" style={{ marginTop: "2rem" }}>
+            {mode === "demo" ? (
+              <Link to="/">← real workflow</Link>
+            ) : (
+              <Link to="/demo">font demo / fixture</Link>
+            )}
+          </p>
         </div>
       </CodexActionProvider>
     </LessonRuntime>
