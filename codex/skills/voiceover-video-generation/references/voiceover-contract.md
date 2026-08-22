@@ -10,6 +10,11 @@
 
 ## Timing Output
 
+`narration-timings.json` should include:
+
+- `estimated`: boolean
+- `segments`: ordered timing entries
+
 Each timing entry must include:
 
 - `slide_id`
