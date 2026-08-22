@@ -1,7 +1,9 @@
 # fal Media Contract
 
 Use `codex/tools/fal_media_agent.py` for the `slide_images` and
-`voiceover_video` branches.
+`voiceover_video` branches, and for the intro-audio half of
+`talking_head_intro` (the video half goes through the `veed-fabric` MCP
+server — see `../../veed-talking-head/references/veed-contract.md`).
 
 ## Command
 
@@ -30,7 +32,9 @@ provider request. Do not read `.env.local`.
 ## Models
 
 - Slide images: `fal-ai/z-image/turbo`
-- Voiceover: `xai/tts/v1`
+- Voiceover: `fal-ai/minimax/speech-2.6-turbo`
+- Talking-head intro audio: `fal-ai/minimax/speech-2.6-turbo` (same endpoint as
+  voiceover, one short request instead of the combined slide narration)
 
 ## Inputs
 
@@ -54,10 +58,33 @@ Submit one queue job per slide in parallel. Defaults:
 
 Submit one queue job for the combined slide narration. The local payload keeps
 ordered `segments` for timing and replay, while the provider payload sends the
-combined `text`, `voice`, and `language`.
+combined `prompt` plus the MiniMax voice settings. Defaults:
+
+- `voice_setting.voice_id`: `Friendly_Person`
+- `voice_setting.emotion`: `happy`
+- `language_boost`: mapped from the `--language` code (`en` -> `English`,
+  unknown codes -> `auto`)
+- `output_format`: `url`
+
+Narration is capped at 5,000 characters per request; longer lessons need split
+generation.
 
 The current TTS provider does not return per-slide timings. Emit estimated
 timings from slide durations and mark `narration-timings.json` as estimated.
+
+## Talking-Head Intro Audio Request
+
+Submit a second, independent queue job to the same
+`fal-ai/minimax/speech-2.6-turbo` endpoint when
+`lesson_script.intro` is present, built from
+`intro.talking_head_script` alone (not joined with the slide narration).
+`target_duration_seconds` defaults to 5 (`--intro-seconds` /
+`FAL_INTRO_SECONDS`) and is advisory only, exactly like the per-slide
+`target_duration_seconds` hints — the provider does not enforce it.
+
+This clip is a fast, credential-light preview of the intro line; it is not
+passed into the `veed-fabric` MCP call that produces `talking-head-intro.mp4`.
+See `../../veed-talking-head/SKILL.md` ("Why two providers for one clip").
 
 ## Outputs
 
@@ -67,5 +94,7 @@ timings from slide durations and mark `narration-timings.json` as estimated.
 - `02-content-generation/slide-image-prompts.json`
 - `02-content-generation/voiceover.mp3`
 - `02-content-generation/voiceover-payload.json`
+- `02-content-generation/talking-head-intro-audio.mp3` (only when `intro` is present)
+- `02-content-generation/talking-head-intro-audio-payload.json` (only when `intro` is present)
 - `02-content-generation/narration-timings.json`
 - sanitized provider metadata under `02-content-generation/provider/`
