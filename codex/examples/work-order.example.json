@@ -1,0 +1,11 @@
+{
+  "topic": "How transformer attention works",
+  "learner_profile": {
+    "audience": "curious software engineers",
+    "level": "intermediate",
+    "target_duration_seconds": 300,
+    "tone": "clear, concrete, visually explanatory"
+  },
+  "run_mode": "dry-run",
+  "output_dir": "artifacts/educational-video/attention-demo"
+}

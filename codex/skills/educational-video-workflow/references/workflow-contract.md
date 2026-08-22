@@ -1,0 +1,20 @@
+# Workflow Contract
+
+The workflow is split into stages that communicate through files rather than hidden conversation state.
+
+## Canonical Artifacts
+
+- `lesson-script.json`: topic, objective, intro script, slide narration, visual briefs, and sources.
+- `asset-manifest.json`: generated media paths and provider metadata.
+- `webpage-build.json`: final page entrypoint, copied assets, and validation status.
+- `qa-report.md`: human-readable status and gaps.
+
+## Run Modes
+
+- `dry-run`: create payloads, prompts, placeholder metadata, and deterministic file paths without external API calls.
+- `test`: call sandbox/test MCP or API endpoints only.
+- `live`: call production providers only after credentials and user intent are explicit.
+
+## Stage Rule
+
+Each stage should be rerunnable from its declared inputs. If a provider returns an id, persist it in that stage's metadata before polling or transforming the result.
