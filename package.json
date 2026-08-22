@@ -1,0 +1,26 @@
+{
+  "name": "veed-hack-2026",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test:timing": "node tests/test_player_timing.mjs"
+  },
+  "dependencies": {
+    "@tambo-ai/react": "1.3.0",
+    "next": "^15.5.7",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "zod": "^4.0.0",
+    "zod-to-json-schema": "^3.25.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5"
+  }
+}

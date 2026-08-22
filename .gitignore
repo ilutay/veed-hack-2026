@@ -6,6 +6,12 @@
 # Run artifacts (generated media, provider responses)
 artifacts/
 
+# Next.js
+/node_modules
+/.next/
+/out/
+*.tsbuildinfo
+
 # OS / editor noise
 .DS_Store
 *.swp
