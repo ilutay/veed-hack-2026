@@ -132,6 +132,16 @@ export interface TeamboxGatewayServerOptions {
   runAction: TeamboxGatewayActionRunner;
 }
 
+export function isAcceptedTeamboxGatewayAddress(
+  listen: TeamboxGatewayServerOptions["listen"],
+  address: ReturnType<Server["address"]>,
+): boolean {
+  return (
+    typeof address === "string" ||
+    ("fd" in listen && address === null)
+  );
+}
+
 export async function startTeamboxGatewayServer(
   options: TeamboxGatewayServerOptions,
 ): Promise<Server> {
@@ -213,7 +223,7 @@ export async function startTeamboxGatewayServer(
     server.listen(options.listen, () => {
       server.removeListener("error", reject);
       const address = server.address();
-      if (typeof address !== "string") {
+      if (!isAcceptedTeamboxGatewayAddress(options.listen, address)) {
         reject(new Error("TeamBox gateway must listen on an AF_UNIX socket"));
         server.close();
         return;

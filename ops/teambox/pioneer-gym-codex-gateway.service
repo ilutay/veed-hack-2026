@@ -45,6 +45,3 @@ ReadOnlyPaths=/srv/codex-workspaces/pioneer-gym/veed-hack-2026
 InaccessiblePaths=-/etc/pioneer-gym -/var/lib/teambox-codex -/root/.codex -/home
 TasksMax=64
 MemoryMax=512M
-
-[Install]
-WantedBy=multi-user.target
