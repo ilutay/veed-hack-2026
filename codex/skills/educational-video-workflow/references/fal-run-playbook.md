@@ -4,6 +4,49 @@ How to actually execute a fal media run, and how to delegate one without burning
 minutes of agent time. Read `fal-media-contract.md` for the flags and payload
 contract; this file covers running it.
 
+## Smoke test
+
+`codex/examples/dotcom-bubble.lesson-script.example.json` is the canonical test
+input: a complete 6-slide, 15-second script, so a stage can be exercised without
+running research and script generation first.
+
+Dry-run — free, no network, no credentials. Safe on every commit:
+
+```bash
+python3 codex/tools/fal_media_agent.py \
+  --script codex/examples/dotcom-bubble.lesson-script.example.json \
+  --output-dir artifacts/educational-video/smoke-dry \
+  --run-id smoke-dry
+```
+
+Expect exit 0, and `narration-timings.json` segments of 0-2, 2-5, 5-8, 8-11,
+11-13, 13-15. Dry-run does not create the `.png` or `.mp3`, so do not assert
+those exist.
+
+Live — spends credits, needs `FAL_KEY`:
+
+```bash
+WORKFLOW_MODE=live scripts/with-env.sh python3 codex/tools/fal_media_agent.py \
+  --script codex/examples/dotcom-bubble.lesson-script.example.json \
+  --output-dir artifacts/educational-video/smoke-live \
+  --run-id smoke-live \
+  --mode live \
+  --poll-interval-seconds 0.5
+```
+
+Expect ~8s and 7 files: `slide-01.png`..`slide-06.png` at 1024x576, plus
+`voiceover.mp3`. See `fal-media-contract.md` for why both `WORKFLOW_MODE=live`
+and `--poll-interval-seconds 0.5` are set.
+
+To ask an agent to run this, point it at this section rather than restating the
+commands — that way the flags cannot drift out of sync:
+
+> Follow the Smoke test section of
+> `codex/skills/educational-video-workflow/references/fal-run-playbook.md`,
+> live mode, from the repo root. Reply with the output folder path and whether
+> all 7 files are present. Nothing else — do not open the images or listen to
+> the audio.
+
 ## Run it directly when you can
 
 The whole job is one command and an `ls`. If you already have repo context

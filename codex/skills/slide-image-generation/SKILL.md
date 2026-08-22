@@ -34,4 +34,6 @@ Read `../educational-video-workflow/references/fal-media-contract.md` before
 changing fal model ids, payload fields, or artifact paths.
 
 Read `../educational-video-workflow/references/fal-run-playbook.md` before
-running a live generation or delegating one to a subagent.
+running a live generation or delegating one to a subagent. Its Smoke test
+section is the canonical way to exercise this stage on its own, using
+`codex/examples/dotcom-bubble.lesson-script.example.json`.
