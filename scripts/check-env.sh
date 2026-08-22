@@ -9,7 +9,7 @@ set -uo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # provider:VARIABLE pairs. Add a line here when you add a provider.
-PROVIDERS="fal:FAL_KEY veed:VEED_API_KEY"
+PROVIDERS="fal:FAL_KEY veed:VEED_API_KEY tavily:TAVILY_API_KEY"
 
 var_for() { # provider -> variable name, empty if unknown
   local p entry

@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taste-labs.local/contracts/taste-profile.schema.json",
+  "title": "TasteProfile",
+  "description": "Learner preferences accumulated across runs. Unlike every other artifact this is NOT per-run - it lives at the artifact root and is read by topic_research as an input, then updated by the app shell after each lesson.",
+  "type": "object",
+  "required": ["version", "updated_at", "axes", "strategy_weights", "history"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1 },
+    "updated_at": { "type": "string", "minLength": 1 },
+    "axes": {
+      "description": "Continuous preferences. 0 is neutral - a fresh profile is all zeroes and must behave exactly as if no profile existed.",
+      "type": "object",
+      "required": ["pace", "depth", "concreteness"],
+      "additionalProperties": false,
+      "properties": {
+        "pace": {
+          "description": "-1 slower and more repetition, +1 faster and denser.",
+          "type": "number", "minimum": -1, "maximum": 1
+        },
+        "depth": {
+          "description": "-1 intuitive and plain-language, +1 technical and precise.",
+          "type": "number", "minimum": -1, "maximum": 1
+        },
+        "concreteness": {
+          "description": "-1 abstract principle first, +1 concrete example first.",
+          "type": "number", "minimum": -1, "maximum": 1
+        }
+      }
+    },
+    "strategy_weights": {
+      "description": "Per-strategy bias applied when topic_research selects a pedagogy. Keys are the strategy enum from research-brief.schema.json; absent keys mean neutral.",
+      "type": "object",
+      "additionalProperties": { "type": "number", "minimum": -1, "maximum": 1 },
+      "propertyNames": {
+        "enum": [
+          "retrieval-practice",
+          "worked-to-faded-example",
+          "concrete-to-abstract",
+          "analogy-first",
+          "contrast-cases",
+          "elaborative-interrogation",
+          "dual-coding"
+        ]
+      }
+    },
+    "direction_weights": {
+      "description": "Bias toward next_topics directions the learner keeps choosing.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "deeper": { "type": "number", "minimum": -1, "maximum": 1 },
+        "wider": { "type": "number", "minimum": -1, "maximum": 1 },
+        "applied": { "type": "number", "minimum": -1, "maximum": 1 }
+      }
+    },
+    "notes": {
+      "description": "Verbatim learner feedback, newest first. Capped - an unbounded list silently becomes the whole prompt.",
+      "type": "array",
+      "maxItems": 20,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "topics_seen": {
+      "description": "Topics already covered, so next_topics does not loop back onto them.",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "history": {
+      "description": "One entry per completed lesson. The evidence behind the axes above - keep it so a profile can be recomputed rather than only mutated.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["run_id", "topic", "completed_at"],
+        "additionalProperties": false,
+        "properties": {
+          "run_id": { "type": "string", "minLength": 1 },
+          "topic": { "type": "string", "minLength": 1 },
+          "completed_at": { "type": "string", "minLength": 1 },
+          "strategy": { "type": "string" },
+          "chosen_direction": { "type": "string", "enum": ["deeper", "wider", "applied"] },
+          "reactions": {
+            "description": "Explicit taps. Each maps to a signed nudge on one axis; the mapping lives in the taste-profile reference doc, not here.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "too-fast", "too-slow",
+                "too-basic", "too-technical",
+                "more-examples", "less-waffle",
+                "loved-the-visuals", "confusing-visuals",
+                "nailed-it"
+              ]
+            }
+          },
+          "note": { "type": "string" },
+          "replays": { "type": "integer", "minimum": 0 },
+          "dropoff_seconds": {
+            "description": "Where the learner stopped watching. Absent means they finished.",
+            "type": "number", "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}

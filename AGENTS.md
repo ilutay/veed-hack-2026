@@ -119,6 +119,7 @@ Current providers:
 | --- | --- | --- | --- |
 | fal.ai | `FAL_KEY` | `slide_images`, `voiceover_video` | `Authorization: Key $FAL_KEY` |
 | Veed.io | `VEED_API_KEY` | `talking_head_intro` | confirm against Veed API docs before the first live call |
+| Tavily | `TAVILY_API_KEY` | `topic_research` | `Authorization: Bearer $TAVILY_API_KEY` |
 
 ## Troubleshooting
 
