@@ -58,6 +58,7 @@ stages:
         agent: ../subagents/talking-head-agent.md
         skill: ../skills/veed-talking-head
         output:
+          - talking-head-intro-audio.mp3
           - talking-head-intro.mp4
           - talking-head-metadata.json
       - id: slide_images
