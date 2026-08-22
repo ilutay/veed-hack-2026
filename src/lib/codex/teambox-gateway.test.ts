@@ -6,7 +6,14 @@ import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 import { runCodexAction } from "./runner";
-import { TeamboxAppServerCodexClient } from "./teambox-app-server-client";
+import {
+  TEAMBOX_CODEX_MODEL,
+  TEAMBOX_CODEX_REASONING_EFFORT,
+  TEAMBOX_CODEX_SERVICE_TIER,
+  TeamboxAppServerCodexClient,
+  fixedTeamboxThreadStartParams,
+  fixedTeamboxTurnStartParams,
+} from "./teambox-app-server-client";
 import {
   handleTeamboxActionValue,
   isAcceptedTeamboxGatewayAddress,
@@ -228,6 +235,32 @@ describe("TeamBox Unix gateway", () => {
 });
 
 describe("TeamBox app-server policy", () => {
+  it("pins Luna, low reasoning, and Fast service tier server-side", () => {
+    const repoRoot = "/srv/codex-workspaces/pioneer-gym/veed-hack-2026";
+    const schema = { type: "object" } as const;
+
+    expect(fixedTeamboxThreadStartParams(repoRoot)).toMatchObject({
+      cwd: repoRoot,
+      model: TEAMBOX_CODEX_MODEL,
+      serviceTier: TEAMBOX_CODEX_SERVICE_TIER,
+      approvalPolicy: "never",
+      sandbox: "read-only",
+    });
+    expect(
+      fixedTeamboxTurnStartParams(repoRoot, "thread-1", "prompt", schema),
+    ).toMatchObject({
+      threadId: "thread-1",
+      model: TEAMBOX_CODEX_MODEL,
+      effort: TEAMBOX_CODEX_REASONING_EFFORT,
+      serviceTier: TEAMBOX_CODEX_SERVICE_TIER,
+      approvalPolicy: "never",
+      sandboxPolicy: { type: "readOnly", networkAccess: false },
+    });
+    expect(TEAMBOX_CODEX_MODEL).toBe("gpt-5.6-luna");
+    expect(TEAMBOX_CODEX_REASONING_EFFORT).toBe("low");
+    expect(TEAMBOX_CODEX_SERVICE_TIER).toBe("fast");
+  });
+
   it("rejects any thread option outside the fixed read-only boundary", () => {
     const client = new TeamboxAppServerCodexClient(
       "/srv/codex-workspaces/pioneer-gym/veed-hack-2026",
