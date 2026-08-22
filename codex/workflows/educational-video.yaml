@@ -56,7 +56,7 @@ stages:
         agent: ../subagents/voiceover-agent.md
         skill: ../skills/voiceover-video-generation
         output:
-          - voiceover.mp4
+          - voiceover.mp3
           - narration-timings.json
 
   - id: assemble_webpage
@@ -69,7 +69,7 @@ stages:
       - lesson_script.json
       - talking-head-intro.mp4
       - slide-images/*.png
-      - voiceover.mp4
+      - voiceover.mp3
       - narration-timings.json
     output:
       - index.html
