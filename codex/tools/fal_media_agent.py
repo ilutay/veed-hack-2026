@@ -99,7 +99,8 @@ class FalQueueClient:
         )
 
     def status(self, status_url: str) -> dict[str, Any]:
-        return self._json_request("GET", status_url, None)
+        separator = "&" if "?" in status_url else "?"
+        return self._json_request("GET", f"{status_url}{separator}logs=1", None)
 
     def result(self, response_url: str) -> dict[str, Any]:
         return self._json_request("GET", response_url, None)
@@ -191,22 +192,13 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--max-workers",
-        default=int(os.environ.get("FAL_MAX_WORKERS", "0")),
+        default=int(os.environ.get("FAL_MAX_WORKERS", "7")),
         type=int,
-        help=(
-            "Thread pool size. 0 (default) sizes it to the job count — one "
-            "worker per slide plus the voiceover and intro-audio jobs — so no "
-            "job waits for a free thread before it is even submitted."
-        ),
     )
     parser.add_argument(
         "--poll-interval-seconds",
-        default=float(os.environ.get("FAL_POLL_INTERVAL_SECONDS", "0.25")),
+        default=float(os.environ.get("FAL_POLL_INTERVAL_SECONDS", "2")),
         type=float,
-        help=(
-            "Queue poll granularity. z-image/turbo finishes in well under a "
-            "second, so a coarse interval is pure added latency per asset."
-        ),
     )
     parser.add_argument(
         "--timeout-seconds",
@@ -284,16 +276,7 @@ def run_agent(
                 base_url=os.environ.get("FAL_BASE_URL", "https://queue.fal.run"),
             )
 
-    # Every job is a network wait, not CPU work, so the pool only needs to be
-    # big enough that nothing queues behind a thread. Sizing it below the job
-    # count starves the last submissions: at the old default of 7 the six slides
-    # and the voiceover filled the pool and the intro-audio job sat unsubmitted
-    # until a slide finished, adding its full latency to the stage.
-    audio_jobs = 1 + (1 if intro_payload is not None else 0)
-    total_jobs = len(slide_payloads) + audio_jobs
-    max_workers = args.max_workers if args.max_workers > 0 else total_jobs
-    max_workers = max(1, min(max_workers, total_jobs))
-    image_workers = min(max(1, max_workers - audio_jobs), max(1, len(slide_payloads)))
+    image_workers = min(max(1, args.max_workers), max(1, len(slide_payloads)))
     if args.mode == "dry-run":
         slide_assets = [
             dry_run_image_asset(item, paths)
@@ -303,7 +286,7 @@ def run_agent(
         intro_audio_asset = dry_run_intro_audio_asset(paths) if intro_payload is not None else None
     else:
         assert client is not None
-        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=args.max_workers) as executor:
             image_futures = [
                 executor.submit(
                     generate_slide_image,
