@@ -7,6 +7,15 @@ export const FIXTURE_RUN_ID = "fixture-dotcom";
 
 const FIXTURE_DIR = path.join(process.cwd(), "codex/examples/fixture-run");
 const ARTIFACTS_DIR = path.join(process.cwd(), "artifacts/educational-video");
+const LIBRARY_FILE = path.join(ARTIFACTS_DIR, "library.json");
+
+export type LibraryEntry = {
+  run_id: string;
+  topic: string;
+  created_at: string;
+  status: RunStatus;
+  title?: string;
+};
 
 export type RunStatus = "pending" | "ready" | "failed";
 
@@ -56,6 +65,44 @@ async function readJson(file: string): Promise<unknown | null> {
   }
 }
 
+async function readLibraryFile(): Promise<LibraryEntry[]> {
+  const raw = await readJson(LIBRARY_FILE);
+  if (!raw || typeof raw !== "object") return [];
+  const runs = (raw as { runs?: unknown }).runs;
+  if (!Array.isArray(runs)) return [];
+  return runs.filter((row): row is LibraryEntry => {
+    if (!row || typeof row !== "object") return false;
+    const e = row as LibraryEntry;
+    return typeof e.run_id === "string" && typeof e.topic === "string";
+  });
+}
+
+export async function appendLibrary(entry: LibraryEntry): Promise<void> {
+  await mkdir(ARTIFACTS_DIR, { recursive: true });
+  const runs = await readLibraryFile();
+  const next = runs.filter((r) => r.run_id !== entry.run_id);
+  next.unshift(entry);
+  await writeFile(
+    LIBRARY_FILE,
+    JSON.stringify({ runs: next }, null, 2) + "\n",
+  );
+}
+
+export async function listLibrary(): Promise<LibraryEntry[]> {
+  const runs = await readLibraryFile();
+  const enriched: LibraryEntry[] = [];
+  for (const entry of runs) {
+    const snap = await readRun(entry.run_id);
+    const script = snap?.script as { title?: string } | null;
+    enriched.push({
+      ...entry,
+      status: snap?.status ?? entry.status,
+      title: script?.title || entry.title || entry.topic,
+    });
+  }
+  return enriched;
+}
+
 /** Demo path: copy the tracked fixture. Instant, no providers. */
 export async function startFixtureRun(): Promise<{
   run_id: string;
@@ -67,8 +114,22 @@ export async function startFixtureRun(): Promise<{
   try {
     await cp(FIXTURE_DIR, dest, { recursive: true });
   } catch {
+    await appendLibrary({
+      run_id: FIXTURE_RUN_ID,
+      topic: "the dot-com bubble",
+      created_at: new Date().toISOString(),
+      status: "ready",
+      title: "The Dot-Com Bubble",
+    });
     return { run_id: FIXTURE_RUN_ID, status: "submitted" };
   }
+  await appendLibrary({
+    run_id,
+    topic: "the dot-com bubble",
+    created_at: new Date().toISOString(),
+    status: "ready",
+    title: "The Dot-Com Bubble",
+  });
   return { run_id, status: "submitted" };
 }
 
@@ -90,6 +151,12 @@ export async function startWorkflowRun(topic: string): Promise<{
       2,
     ) + "\n",
   );
+  await appendLibrary({
+    run_id,
+    topic: trimmed,
+    created_at: new Date().toISOString(),
+    status: "pending",
+  });
   await spawnWorkflow(run_id, trimmed);
   return { run_id, status: "submitted" };
 }

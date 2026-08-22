@@ -4,6 +4,7 @@ import {
   type AppMode,
 } from "@/components/CodexActionProvider";
 import { AgentChat } from "@/components/AgentChat";
+import { AssetLibrary } from "@/components/AssetLibrary";
 import { LessonRenderError } from "@/components/LessonRenderError";
 import { LessonRuntime } from "@/lib/registry";
 import { ComponentRenderer } from "@tambo-ai/react";
@@ -53,9 +54,10 @@ export function LessonApp({ mode = "workflow" }: { mode?: AppMode }) {
                 )}
               </div>
             </header>
+            <AssetLibrary />
             <BlockStage />
           </div>
-          {mode !== "demo" ? <AgentChat /> : null}
+          <AgentChat />
         </div>
       </CodexActionProvider>
     </LessonRuntime>

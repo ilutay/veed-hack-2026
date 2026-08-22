@@ -62,3 +62,13 @@ Read `references/workflow-contract.md` when adding a new stage, changing artifac
 - Keep provider-specific payloads and raw responses under the run directory.
 - Do not make downstream agents redo topic research; they should consume the lesson script.
 - Fail fast on schema mismatches before calling expensive or mutating provider APIs.
+- **Every generated run is durable.** As soon as a run is minted, append it to
+  `artifacts/educational-video/library.json`. Do not delete, overwrite, or
+  treat a finished run as disposable. The learner retrieves past lessons at
+  any time via `GET /api/runs` and the in-app Lessons list. Point them at
+  that list; do not regenerate a lesson they already have.
+- **Never remount the on-screen player to deliver a chat reply.** `agent_message`
+  updates taste / conversation only (`keep_blocks`). A new topic still writes
+  a library entry, but the currently playing video stays on screen until the
+  learner pauses or the lesson ends. Only then may `library_selected` or a
+  new `topic_submitted` swap `LessonPlayer` to another `run_id`.

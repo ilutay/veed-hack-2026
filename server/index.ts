@@ -25,6 +25,7 @@ import {
 } from "./profiles";
 import {
   mimeFor,
+  listLibrary,
   readRun,
   resolveRunFile,
   startFixtureRun,
@@ -101,6 +102,7 @@ async function handleCodexAction(
   let run_id: string | undefined;
   let blocks: TamboComponentContent[] = [];
   let profile: Awaited<ReturnType<typeof readLearnerProfile>> = null;
+  let keep_blocks = false;
 
   switch (action.type) {
     case "topic_submitted":
@@ -173,6 +175,18 @@ async function handleCodexAction(
       blocks = completeOnboardingBlocks(profile, `q-${turnId}`);
       break;
     }
+    case "agent_message": {
+      run_id = action.payload.run_id;
+      keep_blocks = true;
+      break;
+    }
+    case "library_selected": {
+      run_id = action.payload.run_id;
+      blocks = [
+        componentBlock("LessonPlayer", { run_id }, `player-${run_id}`),
+      ];
+      break;
+    }
     default:
       send(res, 400, { error: "unknown action" });
       return;
@@ -184,6 +198,7 @@ async function handleCodexAction(
     turnId,
     run_id,
     blocks,
+    keep_blocks,
     ...(profile ? { profile } : {}),
   });
 }
@@ -416,6 +431,11 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       send(res, 200, profile);
+      return;
+    }
+    if (method === "GET" && (p === "/api/runs" || p === "/api/runs/")) {
+      const runs = await listLibrary();
+      send(res, 200, { runs });
       return;
     }
     const fileMatch = p.match(FILE_RE);

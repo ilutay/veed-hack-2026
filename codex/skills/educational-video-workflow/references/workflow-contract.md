@@ -8,6 +8,19 @@ The workflow is split into stages that communicate through files rather than hid
 - `lesson-script.json`: topic, objective, intro script, slide narration, visual briefs, and sources. Written from the brief; this stage does not research.
 - `asset-manifest.json`: generated media paths and provider metadata.
 - `webpage-build.json`: final page entrypoint, copied assets, and validation status. There is no separate QA stage or `qa-report.md` — `webpage-build.json.checks` and its `notes` array carry validation status and gaps inline, produced by whichever agent runs `assemble_webpage`.
+- `artifacts/educational-video/library.json`: append-only index of every run
+  (`run_id`, `topic`, `created_at`, `status`, optional `title`). The app
+  surfaces this as the Lessons list (`GET /api/runs`). Orchestrators must
+  append on mint and never remove entries; the learner can always retrieve a
+  past run without regenerating it.
+
+## Live player
+
+The Vite app can generate a new run while a lesson is on screen. That run
+still goes into `library.json`. Do **not** swap the mounted `LessonPlayer` if
+audio/video is currently playing — chat, taste updates, and `agent_message`
+are `keep_blocks` and must not remount the stage. Swap only after pause or
+`playback_ended`, via `library_selected` or a fresh `topic_submitted`.
 
 ## Run Modes
 

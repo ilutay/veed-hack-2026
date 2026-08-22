@@ -55,7 +55,7 @@ function isPlaceholder(a?: Asset | null) {
 }
 
 export function LessonPlayer({ run_id, runBase }: LessonPlayerProps) {
-  const { dispatch } = useCodexAction();
+  const { dispatch, setPlaying: setPlayingGlobal } = useCodexAction();
   const [payload, setPayload] = useState<RunPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [index, setIndex] = useState(0);
@@ -70,6 +70,18 @@ export function LessonPlayer({ run_id, runBase }: LessonPlayerProps) {
   const [progress, setProgress] = useState(0);
   const audioRef = useRef<HTMLAudioElement | HTMLVideoElement | null>(null);
   const endedRef = useRef(false);
+
+  const markPlaying = useCallback(
+    (next: boolean) => {
+      setPlaying(next);
+      setPlayingGlobal(next);
+    },
+    [setPlayingGlobal],
+  );
+
+  useEffect(() => {
+    return () => setPlayingGlobal(false);
+  }, [setPlayingGlobal]);
 
   const assetBase = run_id
     ? `/api/run/${encodeURIComponent(run_id)}/file/`
@@ -388,10 +400,10 @@ export function LessonPlayer({ run_id, runBase }: LessonPlayerProps) {
               }
               if (el.paused) {
                 void el.play();
-                setPlaying(true);
+                markPlaying(true);
               } else {
                 el.pause();
-                setPlaying(false);
+                markPlaying(false);
               }
             }}
           >
@@ -445,7 +457,7 @@ export function LessonPlayer({ run_id, runBase }: LessonPlayerProps) {
               onLoadedMetadata={(e) => applyBounds(e.currentTarget.duration)}
               onTimeUpdate={onTimeUpdate}
               onEnded={() => {
-                setPlaying(false);
+                markPlaying(false);
                 emitEnded();
               }}
               onError={() => setAudioFailed(true)}
@@ -460,7 +472,7 @@ export function LessonPlayer({ run_id, runBase }: LessonPlayerProps) {
               onLoadedMetadata={(e) => applyBounds(e.currentTarget.duration)}
               onTimeUpdate={onTimeUpdate}
               onEnded={() => {
-                setPlaying(false);
+                markPlaying(false);
                 emitEnded();
               }}
               onError={() => setAudioFailed(true)}

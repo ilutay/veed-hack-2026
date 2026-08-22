@@ -2,6 +2,7 @@ import {
   blocksForProfile,
   componentBlock,
   newId,
+  runIdFromBlocks,
   type CodexAction,
   type CodexActionResponse,
 } from "@/lib/codex";
@@ -15,6 +16,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -30,6 +32,9 @@ type CodexContextValue = {
   error: string | null;
   profile: LearnerProfile | null;
   setProfile: (profile: LearnerProfile | null) => void;
+  playing: boolean;
+  setPlaying: (playing: boolean) => void;
+  libraryTick: number;
   dispatch: (action: CodexAction) => Promise<void>;
 };
 
@@ -44,6 +49,21 @@ function demoBootBlocks(): TamboComponentContent[] {
 
 function gateBootBlocks(): TamboComponentContent[] {
   return [componentBlock("ProfileGate", {}, "boot-gate")];
+}
+
+function hasPlayer(blocks: TamboComponentContent[]): boolean {
+  return blocks.some((b) => b.name === "LessonPlayer");
+}
+
+function wouldDisturbPlayer(
+  current: TamboComponentContent[],
+  next: TamboComponentContent[],
+): boolean {
+  if (!hasPlayer(current)) return false;
+  if (!hasPlayer(next)) return true;
+  const curId = runIdFromBlocks(current);
+  const nextId = runIdFromBlocks(next);
+  return Boolean(curId && nextId && curId !== nextId);
 }
 
 export function CodexActionProvider({
@@ -62,6 +82,16 @@ export function CodexActionProvider({
   const [error, setError] = useState<string | null>(null);
   const [profile, setProfile] = useState<LearnerProfile | null>(null);
   const [booting, setBooting] = useState(mode !== "demo");
+  const [playing, setPlayingState] = useState(false);
+  const [libraryTick, setLibraryTick] = useState(0);
+  const playingRef = useRef(false);
+  const blocksRef = useRef(blocks);
+  blocksRef.current = blocks;
+
+  const setPlaying = useCallback((next: boolean) => {
+    playingRef.current = next;
+    setPlayingState(next);
+  }, []);
 
   useEffect(() => {
     if (mode === "demo") return;
@@ -99,7 +129,8 @@ export function CodexActionProvider({
 
   const dispatch = useCallback(
     async (action: CodexAction) => {
-      setPending(true);
+      const silent = action.type === "agent_message";
+      if (!silent) setPending(true);
       setError(null);
       try {
         const res = await fetch("/api/codex/action", {
@@ -118,12 +149,18 @@ export function CodexActionProvider({
         const body = (await res.json()) as CodexActionResponse;
         setEpisodeId(body.episodeId);
         setTurnId(body.turnId);
-        setBlocks(body.blocks);
         if (body.profile) setProfile(body.profile);
+        const holdPlayer =
+          playingRef.current &&
+          wouldDisturbPlayer(blocksRef.current, body.blocks);
+        if (!body.keep_blocks && !holdPlayer) {
+          setBlocks(body.blocks);
+        }
+        setLibraryTick((n) => n + 1);
       } catch (e) {
         setError(e instanceof Error ? e.message : "action failed");
       } finally {
-        setPending(false);
+        if (!silent) setPending(false);
       }
     },
     [episodeId, mode],
@@ -139,9 +176,25 @@ export function CodexActionProvider({
       error,
       profile,
       setProfile,
+      playing,
+      setPlaying,
+      libraryTick,
       dispatch,
     }),
-    [mode, episodeId, turnId, blocks, pending, booting, error, profile, dispatch],
+    [
+      mode,
+      episodeId,
+      turnId,
+      blocks,
+      pending,
+      booting,
+      error,
+      profile,
+      playing,
+      setPlaying,
+      libraryTick,
+      dispatch,
+    ],
   );
 
   return (

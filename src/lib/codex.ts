@@ -25,7 +25,12 @@ export type CodexAction =
       type: "quiz_submitted";
       payload: { slug: string; answers: Record<string, string> };
     }
-  | { type: "recommendation_selected"; payload: { topic: string } };
+  | { type: "recommendation_selected"; payload: { topic: string } }
+  | {
+      type: "agent_message";
+      payload: { run_id?: string; message: string };
+    }
+  | { type: "library_selected"; payload: { run_id: string } };
 
 export type CodexActionResponse = {
   status: "submitted";
@@ -33,8 +38,22 @@ export type CodexActionResponse = {
   turnId: string;
   run_id?: string;
   blocks: TamboComponentContent[];
+  keep_blocks?: boolean;
   profile?: LearnerProfile;
 };
+
+export function runIdFromBlocks(
+  blocks: { name?: string; props?: unknown }[],
+): string | undefined {
+  for (const block of blocks) {
+    if (block.name && block.name !== "LessonPlayer") continue;
+    const props = block.props;
+    if (!props || typeof props !== "object") continue;
+    const value = (props as { run_id?: unknown }).run_id;
+    if (typeof value === "string") return value;
+  }
+  return undefined;
+}
 
 export function newId(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;

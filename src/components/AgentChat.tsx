@@ -1,23 +1,34 @@
 import { useCodexAction } from "@/components/CodexActionProvider";
 import type { ChatTurn } from "@/lib/onboarding";
+import { runIdFromBlocks } from "@/lib/codex";
 import { getChat, postChat } from "@/lib/profiles";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+const SUGGESTED_PROMPTS = [
+  "Explain this slide in deeper detail",
+  "Make the explanation more technical",
+  "Give me a real-world application example",
+  "Summarize key takeaway so far",
+];
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
 
 export function AgentChat() {
-  const { profile, setProfile } = useCodexAction();
+  const { profile, setProfile, dispatch, blocks } = useCodexAction();
   const [open, setOpen] = useState(true);
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const logRef = useRef<HTMLDivElement | null>(null);
-  const enabled = Boolean(profile?.slug);
+  const persisted = Boolean(profile?.slug);
+  const runId = runIdFromBlocks(blocks);
+  const busy = sending;
 
   useEffect(() => {
-    if (!profile?.slug) {
-      setTurns([]);
-      return;
-    }
+    if (!profile?.slug) return;
     let cancelled = false;
     void getChat(profile.slug).then((next) => {
       if (!cancelled) setTurns(next);
@@ -30,7 +41,43 @@ export function AgentChat() {
   useEffect(() => {
     const el = logRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [turns.length]);
+  }, [turns.length, sending]);
+
+  const send = useCallback(
+    async (raw: string) => {
+      const value = raw.trim();
+      if (!value || busy) return;
+      setSending(true);
+      setError(null);
+      setMessage("");
+      try {
+        if (profile?.slug) {
+          const body = await postChat(profile.slug, value);
+          setTurns(body.turns);
+          setProfile(body.profile);
+        } else {
+          setTurns((prev) => [
+            ...prev,
+            { role: "learner", text: value, at: nowIso() },
+            {
+              role: "agent",
+              text: "Noted. I'll keep that in mind.",
+              at: nowIso(),
+            },
+          ]);
+        }
+        await dispatch({
+          type: "agent_message",
+          payload: { run_id: runId, message: value },
+        });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "send failed");
+      } finally {
+        setSending(false);
+      }
+    },
+    [busy, dispatch, profile?.slug, runId, setProfile],
+  );
 
   return (
     <aside className={`chat-dock${open ? " is-open" : " is-collapsed"}`}>
@@ -48,9 +95,9 @@ export function AgentChat() {
         <div className="chat-log" ref={logRef}>
           {turns.length === 0 ? (
             <p className="dim">
-              {enabled
-                ? "Tell the agent how you like to learn. Pace, depth, examples — it writes it down."
-                : "Enter your name first. Then you can talk to the agent from here."}
+              {persisted
+                ? "Ask about the lesson, or how you like to learn. Pace, depth, examples — it writes it down."
+                : "Ask about the lesson, or how you like to learn. Enter a name to save it."}
             </p>
           ) : (
             turns.map((turn, i) => (
@@ -64,28 +111,29 @@ export function AgentChat() {
               </div>
             ))
           )}
+          {sending ? (
+            <p className="dim">Codex is responding…</p>
+          ) : null}
         </div>
         {error ? <p className="receipt">{error}</p> : null}
+        <div className="chat-chips">
+          {SUGGESTED_PROMPTS.map((prompt) => (
+            <button
+              key={prompt}
+              type="button"
+              className="chat-chip"
+              disabled={busy}
+              onClick={() => void send(prompt)}
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
         <form
           className="chat-compose"
           onSubmit={(e) => {
             e.preventDefault();
-            const value = message.trim();
-            if (!value || !profile?.slug || sending) return;
-            setSending(true);
-            setError(null);
-            void (async () => {
-              try {
-                const body = await postChat(profile.slug, value);
-                setTurns(body.turns);
-                setProfile(body.profile);
-                setMessage("");
-              } catch (err) {
-                setError(err instanceof Error ? err.message : "send failed");
-              } finally {
-                setSending(false);
-              }
-            })();
+            void send(message);
           }}
         >
           <input
@@ -93,16 +141,14 @@ export function AgentChat() {
             name="chat"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder={
-              enabled ? "e.g. slower, more examples" : "Enter a name first"
-            }
+            placeholder="Ask a question or give feedback…"
             autoComplete="off"
-            disabled={!enabled || sending}
+            disabled={busy}
           />
           <button
             className="btn btn-primary"
             type="submit"
-            disabled={!enabled || sending || !message.trim()}
+            disabled={busy || !message.trim()}
           >
             {sending ? "Sending…" : "Send"}
           </button>

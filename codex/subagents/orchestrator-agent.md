@@ -15,6 +15,14 @@ Own the end-to-end educational video run.
   no benefit, since no branch depends on another's output.
 - Hand the completed asset manifest to the page assembly agent once every
   branch subagent reports back.
+- Append every minted run to `artifacts/educational-video/library.json` and
+  tell the learner it is retrievable from the in-app Lessons list
+  (`GET /api/runs`). Never delete a completed run to "make room" for the next
+  one.
+- Do not remount the on-screen lesson to answer chat. `agent_message` is
+  conversation + taste only. If a new topic is generated while a video is
+  playing, keep the current player and let the learner open the new run from
+  the list after they pause.
 - Stop on contract failures and return the failing artifact path plus the validation error.
 
 ## Inputs
@@ -30,6 +38,8 @@ Own the end-to-end educational video run.
 - `lesson-script.json`
 - `asset-manifest.json`
 - `webpage-build.json`
+- `artifacts/educational-video/library.json` (append-only run index; the
+  learner retrieves any past run from this list)
 
 ## Operating Notes
 
