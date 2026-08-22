@@ -407,6 +407,7 @@ async function renderLesson(job) {
   const outputSchemaPath = join(scriptDir, "output-schema.json");
   const contract = JSON.parse(readFileSync(LESSON_SCHEMA, "utf8"));
   writeFileSync(outputSchemaPath, `${JSON.stringify(toOutputSchema(contract), null, 2)}\n`);
+  chmodSync(outputSchemaPath, 0o644);
 
   setStage(job, "scripting");
   await run(
