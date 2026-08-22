@@ -10,8 +10,9 @@ Use this skill when the user wants to generate or iterate on the full educationa
 ## Workflow
 
 1. Read the work order or collect the topic, learner profile, run mode, and output directory.
-2. Use the research-script stage to produce `lesson-script.json`.
-3. Run the content generation branches concurrently, not sequentially — each
+2. Run `topic_research` to produce `research-brief.json`.
+3. Use the research-script stage to turn that brief into `lesson-script.json`. Do not do new web research.
+4. Run the content generation branches concurrently, not sequentially — each
    stage's wall-clock time (slide images, voiceover, and the ~1-2 minute VEED
    Fabric MCP render) is comparable, and running them one after another
    roughly triples total run time for no benefit, since none of the three
@@ -23,14 +24,16 @@ Use this skill when the user wants to generate or iterate on the full educationa
      agent-driven MCP tool sequence, kicked off in the same turn as the fal
      script rather than after it returns. See `references/workflow-contract.md`
      for the concurrency requirement.
-   Only block on both finishing once you reach step 4.
-4. Assemble the final webpage from validated contracts and media assets.
-5. Run integration QA and report skipped live calls, placeholders, and contract failures.
+   Only block on both finishing once you reach step 5.
+5. Assemble the final webpage from validated contracts and media assets.
+6. Run integration QA and report skipped live calls, placeholders, and contract failures.
 
 ## Contracts
 
 Use these repository contracts as the source of truth:
 
+- `codex/contracts/research-brief.schema.json`
+- `codex/contracts/taste-profile.schema.json`
 - `codex/contracts/lesson-script.schema.json`
 - `codex/contracts/asset-manifest.schema.json`
 - `codex/contracts/webpage-build.schema.json`
