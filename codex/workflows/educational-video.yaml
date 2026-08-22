@@ -17,16 +17,32 @@ inputs:
     default: artifacts/educational-video
 
 contracts:
+  research_brief: ../contracts/research-brief.schema.json
+  taste_profile: ../contracts/taste-profile.schema.json
   lesson_script: ../contracts/lesson-script.schema.json
   asset_manifest: ../contracts/asset-manifest.schema.json
   webpage_build: ../contracts/webpage-build.schema.json
 
 stages:
+  - id: topic_research
+    agent: ../subagents/topic-research-agent.md
+    skill: ../skills/topic-research
+    mode: sequential
+    input:
+      - topic
+      - learner_profile
+      - taste-profile.json
+    output:
+      - research-brief.json
+
   - id: research_script
     agent: ../subagents/research-script-agent.md
     skill: ../skills/topic-research-script
     mode: sequential
+    depends_on:
+      - topic_research
     input:
+      - research-brief.json
       - topic
       - learner_profile
     output:
@@ -37,11 +53,20 @@ stages:
     mode: parallel
     depends_on:
       - research_script
+    concurrency: >
+      Launch every branch below in the same turn lesson_script.json is
+      written, each as its own subagent (Agent tool) — never run one branch
+      to completion before starting another. talking_head_intro in
+      particular is the long pole (VEED render, ~1-2 min); starting it after
+      the fal branch finishes roughly doubles this stage's wall-clock time
+      for no benefit, since no branch reads another's output. See
+      ../skills/educational-video-workflow/references/workflow-contract.md.
     branches:
       - id: talking_head_intro
         agent: ../subagents/talking-head-agent.md
         skill: ../skills/veed-talking-head
         output:
+          - talking-head-intro-audio.mp3
           - talking-head-intro.mp4
           - talking-head-metadata.json
       - id: slide_images
@@ -76,14 +101,6 @@ stages:
       - assets/**
       - webpage-build.json
 
-  - id: integration_qa
-    agent: ../subagents/integration-qa-agent.md
-    mode: sequential
-    depends_on:
-      - assemble_webpage
-    output:
-      - qa-report.md
-
 api_boundaries:
   - Do not call paid or mutating provider APIs unless credentials and an explicit run mode are configured.
   - Prefer dry-run MCP/API contract tests while schemas and providers are still evolving.
@@ -92,7 +109,7 @@ api_boundaries:
 artifact_layout:
   root: artifacts/educational-video/{run_id}
   stage_dirs:
+    topic_research: 00-topic-research
     research_script: 01-research-script
     content_generation: 02-content-generation
     assemble_webpage: 03-webpage
-    integration_qa: 04-qa

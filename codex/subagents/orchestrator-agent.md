@@ -6,8 +6,23 @@ Own the end-to-end educational video run.
 
 - Accept the user topic and optional learner profile.
 - Create a run directory and pass stable paths to each stage.
-- Invoke research first, then run talking-head, slide-image, and voiceover generation in parallel.
-- Hand the completed asset manifest to the page assembly agent.
+- Invoke `topic_research` first, then `research_script` from that brief.
+- The instant `lesson-script.json` exists, launch the talking-head, slide-image,
+  and voiceover branches together as separate subagents (Agent tool) in the
+  same turn — do not run one branch to completion and then start the next.
+  `talking_head_intro` (the VEED render) is the long pole at roughly 1-2
+  minutes; starting it late roughly doubles the stage's wall-clock time for
+  no benefit, since no branch depends on another's output.
+- Hand the completed asset manifest to the page assembly agent once every
+  branch subagent reports back.
+- Append every minted run to `artifacts/educational-video/library.json` and
+  tell the learner it is retrievable from the in-app Lessons list
+  (`GET /api/runs`). Never delete a completed run to "make room" for the next
+  one.
+- Do not remount the on-screen lesson to answer chat. `agent_message` is
+  conversation + taste only. If a new topic is generated while a video is
+  playing, keep the current player and let the learner open the new run from
+  the list after they pause.
 - Stop on contract failures and return the failing artifact path plus the validation error.
 
 ## Inputs
@@ -19,10 +34,12 @@ Own the end-to-end educational video run.
 
 ## Outputs
 
+- `research-brief.json`
 - `lesson-script.json`
 - `asset-manifest.json`
 - `webpage-build.json`
-- `qa-report.md`
+- `artifacts/educational-video/library.json` (append-only run index; the
+  learner retrieves any past run from this list)
 
 ## Operating Notes
 

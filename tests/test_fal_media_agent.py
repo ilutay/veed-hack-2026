@@ -42,13 +42,16 @@ def args_for(script: Path, output_dir: Path, mode: str = "dry-run") -> argparse.
         output_dir=output_dir,
         run_id="unit-run",
         mode=mode,
-        voice="ara",
+        voice="Friendly_Person",
+        emotion="happy",
         language="en",
+        speed=1.2,
         image_size="landscape_16_9",
         image_steps=8,
         max_workers=7,
         poll_interval_seconds=0,
         timeout_seconds=5,
+        intro_seconds=5,
     )
 
 
@@ -62,8 +65,12 @@ class FakeFalClient:
         if endpoint_id == fal_media_agent.IMAGE_ENDPOINT:
             slide_match = re.search(r"Slide id: (slide-\d+)", payload["prompt"])
             request_id = f"req-{slide_match.group(1)}"
-        else:
+        elif "[pause]" in payload.get("prompt", ""):
+            # Only the combined multi-slide narration joins segments with
+            # "[pause]"; the intro clip is a single short line of text.
             request_id = "req-voiceover"
+        else:
+            request_id = "req-intro-audio"
         with self.lock:
             self.submissions.append((endpoint_id, payload, request_id))
         return {
@@ -120,16 +127,35 @@ class FalMediaAgentTests(unittest.TestCase):
             content_dir = root / "run" / "02-content-generation"
             prompts = json.loads((content_dir / "slide-image-prompts.json").read_text())
             voice_payload = json.loads((content_dir / "voiceover-payload.json").read_text())
+            intro_payload = json.loads((content_dir / "talking-head-intro-audio-payload.json").read_text())
             timings = json.loads((content_dir / "narration-timings.json").read_text())
 
             self.assertEqual(len(prompts), 5)
             self.assertEqual(prompts[0]["endpoint"], fal_media_agent.IMAGE_ENDPOINT)
             self.assertEqual(prompts[0]["payload"]["image_size"], "landscape_16_9")
             self.assertEqual(voice_payload["endpoint"], fal_media_agent.VOICE_ENDPOINT)
-            self.assertIn("[pause]", voice_payload["payload"]["text"])
+            self.assertIn("[pause]", voice_payload["payload"]["prompt"])
+            self.assertEqual(
+                voice_payload["payload"]["voice_setting"],
+                {"voice_id": "Friendly_Person", "emotion": "happy", "speed": 1.2},
+            )
+            self.assertEqual(voice_payload["payload"]["language_boost"], "English")
+            self.assertEqual(voice_payload["payload"]["output_format"], "url")
+            self.assertEqual(intro_payload["endpoint"], fal_media_agent.VOICE_ENDPOINT)
+            self.assertEqual(intro_payload["payload"]["prompt"], "Let's make attention concrete.")
+            self.assertEqual(
+                intro_payload["payload"]["voice_setting"],
+                {"voice_id": "Friendly_Person", "emotion": "happy", "speed": 1.2},
+            )
+            self.assertEqual(intro_payload["target_duration_seconds"], 5)
             self.assertEqual(len(timings["segments"]), 5)
             self.assertTrue(timings["estimated"])
             self.assertEqual(manifest["assets"]["voiceover"]["media_type"], "audio/mpeg")
+            self.assertEqual(manifest["assets"]["talking_head_intro_audio"]["media_type"], "audio/mpeg")
+            self.assertEqual(
+                manifest["assets"]["talking_head_intro_audio"]["provider_job_id"], "dry-run-intro-audio"
+            )
+            self.assertEqual(manifest["assets"]["talking_head_intro"]["provider"], "pending")
             self.assertEqual(manifest["assets"]["slide_images"][0]["provider_job_id"], "dry-run-slide-01")
 
     def test_markdown_full_script_is_normalized_to_lesson_script(self):
@@ -168,7 +194,7 @@ Visual brief: Stacked transparent routing layers.
         self.assertEqual(lesson["slides"][0]["key_points"], ["tokens", "queries"])
         self.assertIn("Matching badges", lesson["slides"][1]["visual_brief"])
 
-    def test_test_mode_submits_all_images_and_one_voiceover(self):
+    def test_test_mode_submits_all_images_one_voiceover_and_one_intro_audio(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             script_path = root / "lesson-script.input.json"
@@ -185,7 +211,10 @@ Visual brief: Stacked transparent routing layers.
                 item for item in fake_client.submissions if item[0] == fal_media_agent.IMAGE_ENDPOINT
             ]
             voice_submissions = [
-                item for item in fake_client.submissions if item[0] == fal_media_agent.VOICE_ENDPOINT
+                item for item in fake_client.submissions if item[2] == "req-voiceover"
+            ]
+            intro_submissions = [
+                item for item in fake_client.submissions if item[2] == "req-intro-audio"
             ]
             provider_response = json.loads(
                 (root / "run" / "02-content-generation" / "provider" / "slide-01-response.json").read_text()
@@ -193,10 +222,16 @@ Visual brief: Stacked transparent routing layers.
 
             self.assertEqual(len(image_submissions), 5)
             self.assertEqual(len(voice_submissions), 1)
-            self.assertEqual(len(fake_client.downloads), 6)
+            self.assertEqual(len(intro_submissions), 1)
+            self.assertEqual(len(fake_client.downloads), 7)
             self.assertEqual(provider_response["images"][0]["url"], "https://fal.media/files/req-slide-01.png")
             self.assertEqual(manifest["assets"]["slide_images"][0]["path"], "02-content-generation/slide-images/slide-01.png")
             self.assertEqual(manifest["assets"]["voiceover"]["provider_job_id"], "req-voiceover")
+            self.assertEqual(manifest["assets"]["talking_head_intro_audio"]["provider_job_id"], "req-intro-audio")
+            self.assertEqual(
+                manifest["assets"]["talking_head_intro_audio"]["path"],
+                "02-content-generation/talking-head-intro-audio.mp3",
+            )
 
 
 if __name__ == "__main__":

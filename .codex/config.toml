@@ -1,0 +1,7 @@
+# Project-scoped Codex CLI configuration (trusted projects only).
+# See AGENTS.md for the credential/auth model this repo uses; this file only
+# wires up the VEED Fabric MCP server, it carries no secrets.
+
+[mcp_servers."veed-fabric"]
+url = "https://www.veed.io/api/v1/mcp"
+auth = "oauth"

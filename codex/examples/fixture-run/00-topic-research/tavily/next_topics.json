@@ -1,0 +1,36 @@
+{
+  "query": "adjacent subtopics, prerequisites, and applications of The dot-com bubble",
+  "results": [
+    {
+      "title": "What actually popped the bubble in March 2000",
+      "url": "https://www.investopedia.com/terms/d/dotcom-bubble.asp",
+      "content": "The mechanism and trigger that popped the bubble in March 2000 is the natural next question once a lesson establishes that it burst. Rate rises, lock-up expiries, and a shift in profit expectations are well documented.",
+      "score": 0.84
+    },
+    {
+      "title": "Speculative bubbles before the internet",
+      "url": "https://www.britannica.com/money/tulip-mania",
+      "content": "Earlier speculative bubbles, including tulip mania and the South Sea episode, place the internet boom in a reusable historical pattern rather than as a one-off piece of tech history.",
+      "score": 0.79
+    },
+    {
+      "title": "Which dot-com era companies survived",
+      "url": "https://www.sec.gov/spotlight/internet-economy",
+      "content": "An applied follow-up is which era companies survived and what they did differently. Amazon and others turned the repricing into a stronger business rather than disappearing with the speculation.",
+      "score": 0.73
+    },
+    {
+      "title": "Prerequisites: reading a stock index",
+      "url": "https://www.investopedia.com/terms/n/nasdaqcomposite.asp",
+      "content": "A prerequisite for going deeper is knowing how the NASDAQ Composite differs from the NASDAQ-100 so peak and trough figures are not swapped.",
+      "score": 0.58
+    }
+  ],
+  "images": [],
+  "answer": null,
+  "response_time": 0.28,
+  "usage": {
+    "credits": 1
+  },
+  "request_id": "fixture-next-topics"
+}

@@ -1,0 +1,35 @@
+{
+  "estimated": true,
+  "segments": [
+    {
+      "slide_id": "slide-01",
+      "start_seconds": 0.0,
+      "end_seconds": 2.0
+    },
+    {
+      "slide_id": "slide-02",
+      "start_seconds": 2.0,
+      "end_seconds": 5.0
+    },
+    {
+      "slide_id": "slide-03",
+      "start_seconds": 5.0,
+      "end_seconds": 8.0
+    },
+    {
+      "slide_id": "slide-04",
+      "start_seconds": 8.0,
+      "end_seconds": 11.0
+    },
+    {
+      "slide_id": "slide-05",
+      "start_seconds": 11.0,
+      "end_seconds": 13.0
+    },
+    {
+      "slide_id": "slide-06",
+      "start_seconds": 13.0,
+      "end_seconds": 15.0
+    }
+  ]
+}

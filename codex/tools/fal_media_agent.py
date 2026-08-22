@@ -26,7 +26,26 @@ from typing import Any
 
 
 IMAGE_ENDPOINT = "fal-ai/z-image/turbo"
-VOICE_ENDPOINT = "xai/tts/v1"
+VOICE_ENDPOINT = "fal-ai/minimax/speech-2.6-turbo"
+VOICE_TEXT_LIMIT = 5000
+LANGUAGE_BOOSTS = {
+    "en": "English",
+    "es": "Spanish",
+    "fr": "French",
+    "de": "German",
+    "it": "Italian",
+    "pt": "Portuguese",
+    "nl": "Dutch",
+    "ru": "Russian",
+    "uk": "Ukrainian",
+    "pl": "Polish",
+    "tr": "Turkish",
+    "ar": "Arabic",
+    "hi": "Hindi",
+    "ja": "Japanese",
+    "ko": "Korean",
+    "zh": "Chinese",
+}
 DEFAULT_ART_DIRECTION = (
     "Clean educational editorial illustration; concrete diagrams and visual "
     "metaphors over decorative backgrounds; consistent palette; no tiny labels "
@@ -80,8 +99,7 @@ class FalQueueClient:
         )
 
     def status(self, status_url: str) -> dict[str, Any]:
-        separator = "&" if "?" in status_url else "?"
-        return self._json_request("GET", f"{status_url}{separator}logs=1", None)
+        return self._json_request("GET", status_url, None)
 
     def result(self, response_url: str) -> dict[str, Any]:
         return self._json_request("GET", response_url, None)
@@ -156,8 +174,15 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
         choices=("dry-run", "test", "live"),
         default=os.environ.get("WORKFLOW_MODE", "dry-run"),
     )
-    parser.add_argument("--voice", default=os.environ.get("FAL_TTS_VOICE", "ara"))
+    parser.add_argument("--voice", default=os.environ.get("FAL_TTS_VOICE", "Friendly_Person"))
+    parser.add_argument("--emotion", default=os.environ.get("FAL_TTS_EMOTION", "happy"))
     parser.add_argument("--language", default=os.environ.get("FAL_TTS_LANGUAGE", "en"))
+    parser.add_argument(
+        "--speed",
+        default=float(os.environ.get("FAL_TTS_SPEED", "1.2")),
+        type=float,
+        help="MiniMax voice_setting.speed multiplier. 1.0 is normal pace; >1.0 talks faster.",
+    )
     parser.add_argument("--image-size", default=os.environ.get("FAL_IMAGE_SIZE", "landscape_16_9"))
     parser.add_argument(
         "--image-steps",
@@ -166,18 +191,37 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--max-workers",
-        default=int(os.environ.get("FAL_MAX_WORKERS", "7")),
+        default=int(os.environ.get("FAL_MAX_WORKERS", "0")),
         type=int,
+        help=(
+            "Thread pool size. 0 (default) sizes it to the job count — one "
+            "worker per slide plus the voiceover and intro-audio jobs — so no "
+            "job waits for a free thread before it is even submitted."
+        ),
     )
     parser.add_argument(
         "--poll-interval-seconds",
-        default=float(os.environ.get("FAL_POLL_INTERVAL_SECONDS", "2")),
+        default=float(os.environ.get("FAL_POLL_INTERVAL_SECONDS", "0.25")),
         type=float,
+        help=(
+            "Queue poll granularity. z-image/turbo finishes in well under a "
+            "second, so a coarse interval is pure added latency per asset."
+        ),
     )
     parser.add_argument(
         "--timeout-seconds",
         default=int(os.environ.get("FAL_TIMEOUT_SECONDS", "600")),
         type=int,
+    )
+    parser.add_argument(
+        "--intro-seconds",
+        default=int(os.environ.get("FAL_INTRO_SECONDS", "5")),
+        type=int,
+        help=(
+            "Target duration for the talking-head intro audio clip. Advisory "
+            "only, like the per-slide target_duration_seconds hints below — "
+            "the TTS model does not enforce a duration."
+        ),
     )
     return parser.parse_args(argv)
 
@@ -206,10 +250,27 @@ def run_agent(
         lesson,
         run_id=run_id,
         voice=args.voice,
+        emotion=args.emotion,
         language=args.language,
+        speed=args.speed,
+    )
+    intro_payload = (
+        build_intro_audio_payload(
+            lesson,
+            run_id=run_id,
+            voice=args.voice,
+            emotion=args.emotion,
+            language=args.language,
+            target_seconds=args.intro_seconds,
+            speed=args.speed,
+        )
+        if lesson.get("intro")
+        else None
     )
     write_json(paths.content_dir / "slide-image-prompts.json", slide_payloads)
     write_json(paths.content_dir / "voiceover-payload.json", voice_payload)
+    if intro_payload is not None:
+        write_json(paths.content_dir / "talking-head-intro-audio-payload.json", intro_payload)
 
     if args.mode != "dry-run":
         if preflight:
@@ -223,16 +284,26 @@ def run_agent(
                 base_url=os.environ.get("FAL_BASE_URL", "https://queue.fal.run"),
             )
 
-    image_workers = min(max(1, args.max_workers), max(1, len(slide_payloads)))
+    # Every job is a network wait, not CPU work, so the pool only needs to be
+    # big enough that nothing queues behind a thread. Sizing it below the job
+    # count starves the last submissions: at the old default of 7 the six slides
+    # and the voiceover filled the pool and the intro-audio job sat unsubmitted
+    # until a slide finished, adding its full latency to the stage.
+    audio_jobs = 1 + (1 if intro_payload is not None else 0)
+    total_jobs = len(slide_payloads) + audio_jobs
+    max_workers = args.max_workers if args.max_workers > 0 else total_jobs
+    max_workers = max(1, min(max_workers, total_jobs))
+    image_workers = min(max(1, max_workers - audio_jobs), max(1, len(slide_payloads)))
     if args.mode == "dry-run":
         slide_assets = [
             dry_run_image_asset(item, paths)
             for item in slide_payloads
         ]
         voice_asset = dry_run_voice_asset(paths)
+        intro_audio_asset = dry_run_intro_audio_asset(paths) if intro_payload is not None else None
     else:
         assert client is not None
-        with concurrent.futures.ThreadPoolExecutor(max_workers=args.max_workers) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             image_futures = [
                 executor.submit(
                     generate_slide_image,
@@ -255,6 +326,18 @@ def run_agent(
                 args.poll_interval_seconds,
                 args.timeout_seconds,
             )
+            intro_future = (
+                executor.submit(
+                    generate_intro_audio,
+                    client,
+                    intro_payload,
+                    paths,
+                    args.poll_interval_seconds,
+                    args.timeout_seconds,
+                )
+                if intro_payload is not None
+                else None
+            )
             for payload in remaining_payloads:
                 done, active = concurrent.futures.wait(
                     active,
@@ -275,6 +358,7 @@ def run_agent(
             for future in concurrent.futures.as_completed(active):
                 slide_assets.append(future.result())
             voice_asset = voice_future.result()
+            intro_audio_asset = intro_future.result() if intro_future is not None else None
 
         slide_assets.sort(key=lambda item: item["slide_id"])
 
@@ -287,6 +371,7 @@ def run_agent(
         lesson_script_path=paths.lesson_script_path,
         slide_assets=slide_assets,
         voice_asset=voice_asset,
+        intro_audio_asset=intro_audio_asset,
         timings=timings,
     )
     write_json(paths.manifest_path, manifest)
@@ -520,7 +605,9 @@ def build_voice_payload(
     *,
     run_id: str,
     voice: str,
+    emotion: str,
     language: str,
+    speed: float,
 ) -> dict[str, Any]:
     segments = [
         {
@@ -531,26 +618,74 @@ def build_voice_payload(
         for slide in lesson["slides"]
     ]
     text = "\n[pause]\n".join(segment["text"].strip() for segment in segments)
-    if len(text) > 15000:
+    if len(text) > VOICE_TEXT_LIMIT:
         raise AgentError(
-            "combined narration exceeds xai/tts/v1 15,000 character limit; split generation is needed"
+            f"combined narration exceeds {VOICE_ENDPOINT} {VOICE_TEXT_LIMIT:,} character limit; "
+            "split generation is needed"
         )
     return {
         "run_id": run_id,
         "endpoint": VOICE_ENDPOINT,
         "voice": voice,
+        "emotion": emotion,
         "language": language,
+        "speed": speed,
         "segments": segments,
         "target_duration_seconds": sum(
             int(segment["target_duration_seconds"] or estimate_duration_seconds(segment["text"]))
             for segment in segments
         ),
         "payload": {
-            "text": text,
-            "voice": voice,
-            "language": language,
+            "prompt": text,
+            "voice_setting": {
+                "voice_id": voice,
+                "emotion": emotion,
+                "speed": speed,
+            },
+            "language_boost": language_boost(language),
+            "output_format": "url",
         },
     }
+
+
+def build_intro_audio_payload(
+    lesson: dict[str, Any],
+    *,
+    run_id: str,
+    voice: str,
+    emotion: str,
+    language: str,
+    target_seconds: int,
+    speed: float,
+) -> dict[str, Any]:
+    """Payload for the short talking-head intro clip, kept separate from the
+    combined slide narration so it can be generated and swapped independently.
+    """
+    text = lesson["intro"]["talking_head_script"].strip()
+    return {
+        "run_id": run_id,
+        "endpoint": VOICE_ENDPOINT,
+        "voice": voice,
+        "emotion": emotion,
+        "language": language,
+        "speed": speed,
+        "target_duration_seconds": target_seconds,
+        "payload": {
+            "prompt": text,
+            "voice_setting": {
+                "voice_id": voice,
+                "emotion": emotion,
+                "speed": speed,
+            },
+            "language_boost": language_boost(language),
+            "output_format": "url",
+        },
+    }
+
+
+def language_boost(language: str) -> str:
+    """Map an ISO language code to a MiniMax `language_boost` value."""
+    return LANGUAGE_BOOSTS.get(language.strip().lower(), "auto")
 
 
 def stable_seed(run_id: str, slide_id: str) -> int:
@@ -580,6 +715,18 @@ def dry_run_voice_asset(paths: Paths) -> dict[str, Any]:
         "media_type": "audio/mpeg",
         "provider": "fal.ai",
         "provider_job_id": "dry-run-voiceover",
+        "metadata_path": relative_path(paths.run_root, metadata_path),
+    }
+
+
+def dry_run_intro_audio_asset(paths: Paths) -> dict[str, Any]:
+    metadata_path = paths.provider_dir / "talking-head-intro-audio-dry-run.json"
+    write_json(metadata_path, {"mode": "dry-run", "provider": "fal.ai", "endpoint": VOICE_ENDPOINT})
+    return {
+        "path": relative_path(paths.run_root, paths.content_dir / "talking-head-intro-audio.mp3"),
+        "media_type": "audio/mpeg",
+        "provider": "fal.ai",
+        "provider_job_id": "dry-run-intro-audio",
         "metadata_path": relative_path(paths.run_root, metadata_path),
     }
 
@@ -637,6 +784,35 @@ def generate_voiceover(
         "provider": "fal.ai",
         "provider_job_id": request_id,
         "metadata_path": relative_path(paths.run_root, paths.provider_dir / "voiceover-response.json"),
+    }
+
+
+def generate_intro_audio(
+    client: FalQueueClient,
+    item: dict[str, Any],
+    paths: Paths,
+    poll_interval_seconds: float,
+    timeout_seconds: int,
+) -> dict[str, Any]:
+    request = client.submit(item["endpoint"], item["payload"])
+    request_id = require_request_id(request, "talking-head-intro-audio")
+    write_json(paths.provider_dir / "talking-head-intro-audio-submit.json", sanitize_provider_json(request))
+    result = wait_for_result(client, request, poll_interval_seconds, timeout_seconds)
+    write_json(paths.provider_dir / "talking-head-intro-audio-response.json", sanitize_provider_json(result))
+    data = unwrap_result_data(result)
+    audio_url = data.get("audio", {}).get("url")
+    if not audio_url:
+        raise AgentError("intro audio response did not include audio.url")
+    output_path = paths.content_dir / "talking-head-intro-audio.mp3"
+    client.download(audio_url, output_path)
+    return {
+        "path": relative_path(paths.run_root, output_path),
+        "media_type": "audio/mpeg",
+        "provider": "fal.ai",
+        "provider_job_id": request_id,
+        "metadata_path": relative_path(
+            paths.run_root, paths.provider_dir / "talking-head-intro-audio-response.json"
+        ),
     }
 
 
@@ -699,20 +875,26 @@ def build_asset_manifest(
     lesson_script_path: Path,
     slide_assets: list[dict[str, Any]],
     voice_asset: dict[str, Any],
+    intro_audio_asset: dict[str, Any] | None,
     timings: list[dict[str, float | str]],
 ) -> dict[str, Any]:
+    assets: dict[str, Any] = {
+        # Filled in by the veed-talking-head skill once the VEED Fabric MCP
+        # video call completes; see codex/skills/veed-talking-head.
+        "talking_head_intro": {
+            "path": "02-content-generation/talking-head-intro.mp4",
+            "media_type": "video/mp4",
+            "provider": "pending",
+        },
+        "slide_images": slide_assets,
+        "voiceover": voice_asset,
+    }
+    if intro_audio_asset is not None:
+        assets["talking_head_intro_audio"] = intro_audio_asset
     return {
         "run_id": run_id,
         "lesson_script": lesson_script_path.name,
-        "assets": {
-            "talking_head_intro": {
-                "path": "02-content-generation/talking-head-intro.mp4",
-                "media_type": "video/mp4",
-                "provider": "pending",
-            },
-            "slide_images": slide_assets,
-            "voiceover": voice_asset,
-        },
+        "assets": assets,
         "timings": timings,
     }
 
